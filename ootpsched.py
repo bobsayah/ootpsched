@@ -348,7 +348,9 @@ def check_for_offdays(schedule):
                 streak=streak+1
             else:
                 if streak > 20:
-                    print(thisteam+' plays '+str(streak)+' consecutive games ending '+str(openingday(year)+timedelta(d)))
+                    firstdate=str(openingday(year)+timedelta(d-streak))
+                    lastdate=str(openingday(year)+timedelta(d-1))
+                    print(thisteam+' plays '+str(streak)+' consecutive games starting '+firstdate+' and ending '+lastdate)
                 streak=0
     #out = [item for t in lt for item in t]
                 
