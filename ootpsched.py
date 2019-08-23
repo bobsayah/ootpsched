@@ -12,7 +12,7 @@ teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
           'Western' : ['STL', 'COL', 'DAL', 'LA', 'KC', 'SF'],
         }
 
-seriesdates = namedtuple('seriesdates', 'startdate, length, seriestype, serieslist')
+seriesdates = namedtuple('seriesdates', 'startdate, length, datetype, serieslist')
 series = namedtuple('series', 'seriestype homediv awaydiv numgames seriesnum reversed')
 matchup = namedtuple('matchup', 'home away')
 gameday = namedtuple('date', 'gamelist')
@@ -127,7 +127,7 @@ def popdivdivseries(allseries,numgames):
 
 def assignholidayseries(dates,series):
     for d in dates:
-        if d.seriestype == 'holiday':
+        if d.datetype == 'holiday':
             for div in mlbdivisions:
                 d.serieslist.append(poproundrobinseriesexact(series,div,d.length))
 
@@ -157,7 +157,7 @@ def assignthreegamedivdiv(dates,series):
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
-            if d.seriestype == 'weekend':
+            if d.datetype == 'weekend':
                 if d.length == 3:
                     d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
                 else:
@@ -190,7 +190,7 @@ def assignthreegameweekendroundrobin(dates,series):
     for d in dates:
         if len(d.serieslist):
             continue
-        if d.length == 3 and d.seriestype == 'weekend':
+        if d.length == 3 and d.datetype == 'weekend':
             d.serieslist.append(poproundrobinseriesexact(series,mlbdivisions[0],3))
             d.serieslist.append(poproundrobinseriesexact(series,mlbdivisions[1],3))
             d.serieslist.append(poproundrobinseriesexact(series,mlbdivisions[2],3))
@@ -199,7 +199,7 @@ def assignthreegameweekdayroundrobin(dates,series):
     for d in dates:
         if len(d.serieslist):
             continue
-        if d.length == 3 and d.seriestype == 'weekday':
+        if d.length == 3 and d.datetype == 'weekday':
             d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[0],2))
             d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[1],2))
             d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[2],2))
@@ -226,6 +226,8 @@ def swap_series(allseriesdates,replacementdate,replacementseries):
         seriesdate = allseriesdates[r]
         if abs(seriesdate.startdate-replacementdate.startdate).days < 10:
             continue
+        if seriesdate.datetype != replacementdate.datetype:
+            continue
         for i in seriesdate.serieslist:
             if ( i.homediv == replacementseries.homediv and
                  i.awaydiv == replacementseries.awaydiv and
@@ -233,7 +235,7 @@ def swap_series(allseriesdates,replacementdate,replacementseries):
                  i.seriestype == replacementseries.seriestype and
                  seriesdate.length >= replacementseries.numgames and
                  replacementdate.length >= i.numgames):
-                #print("replacement series:"+str(seriesdate.startdate)+':'+str(replacementseries))
+                print("replacement series:"+str(seriesdate.startdate)+':'+str(replacementseries))
                 seriesdate.serieslist.remove(i)
                 replacementdate.serieslist.remove(replacementseries)
                 seriesdate.serieslist.append(replacementseries)
@@ -284,7 +286,7 @@ def assigngamestodates(allseriesdates):
                 else:
                     hometeam = teams[s.homediv][m[0]]
                     awayteam = teams[s.awaydiv][m[1]]
-                if random.randint(0,1) and not d.seriestype == 'weekend':
+                if random.randint(0,1) and not d.datetype == 'weekend':
                     first = 0
                     last = s.numgames
                 else:
@@ -318,6 +320,22 @@ def check_for_consecutive_series(allseriesdates):
 
         prev=x[day]
     return True
+
+def check_series_length(allseriesdates):
+    found_issue = False
+    for d in allseriesdates:
+        for s in d.serieslist:
+            if d.length < s.numgames:
+                print('Error:  too many games in too few days')
+                print(d)
+                print(s)
+                found_issue = True
+            elif d.length > s.numgames+1:
+                print('Error:  too few games in too many days')
+                print(d)
+                print(s)
+                found_issue = True
+    return found_issue
                 
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
@@ -331,6 +349,12 @@ assignthreegameweekdayroundrobin(allseriesdates,allseries)
 if (len(allseries)):
     print(str(len(series))+' series were not assigned.')
     exit(1)
+
+print()
+if check_series_length(allseriesdates):
+    print(allseriesdates)
+    exit(1)
+    
 numiters=1
 while rearrange_series(allseriesdates):
     numiters=numiters+1
@@ -342,6 +366,12 @@ if not check_for_consecutive_series(allseriesdates):
 
 for s in allseriesdates:
     print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+
+print()
+print()
+if check_series_length(allseriesdates):
+    print(allseriesdates)
+    exit(1)
 
 assigngamestodates(allseriesdates)
 
