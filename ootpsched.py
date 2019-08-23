@@ -352,7 +352,7 @@ def check_for_offdays(schedule):
                     lastdate=str(openingday(year)+timedelta(d-1))
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+firstdate+' and ending '+lastdate)
                 streak=0
-    #out = [item for t in lt for item in t]
+                print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
                 
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
