@@ -296,6 +296,7 @@ def assigngamestodates(allseriesdates):
                     gamedays[i+j].append((hometeam, awayteam))
     for d in range(0,seasonlength):
         print(str(openingday+timedelta(d))+': '+str(gamedays[d]))
+    return gamedays
                 
 def check_for_consecutive_series(allseriesdates):
     x = dict()
@@ -336,6 +337,20 @@ def check_series_length(allseriesdates):
                 print(s)
                 found_issue = True
     return found_issue
+
+def check_for_offdays(schedule):
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        streak = 0
+        for d in range(0,len(schedule)):
+            teams_playing_today = [ team for game in schedule[d] for team in game]
+            if thisteam in teams_playing_today:
+                streak=streak+1
+            else:
+                if streak > 20:
+                    print(thisteam+' plays '+str(streak)+' consecutive games ending '+str(openingday(year)+timedelta(d)))
+                streak=0
+    #out = [item for t in lt for item in t]
                 
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
@@ -373,7 +388,9 @@ if check_series_length(allseriesdates):
     print(allseriesdates)
     exit(1)
 
-assigngamestodates(allseriesdates)
+schedule = assigngamestodates(allseriesdates)
+
+check_for_offdays(schedule)
 
 #for s in allseries:
 #    print(s)
