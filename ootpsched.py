@@ -118,9 +118,9 @@ def poproundrobinseriesmin(allseries,division,numgames):
             return s
     raise
     
-def popdivdivseries(allseries,numgames):
+def popdivdivseries(allseries,numgames,blackout='NoBlackout'):
     for s in allseries:
-        if s.seriestype == 'divdiv' and s.numgames == numgames:
+        if s.seriestype == 'divdiv' and s.numgames == numgames and s.homediv != blackout and s.awaydiv != blackout:
             allseries.remove(s)
             return s
     raise
@@ -135,7 +135,7 @@ def assignfourgamedivdiv(dates,series):
     for d in dates:
         if len(d.serieslist):
             continue
-        if d.length == 4:
+        if d.length == 4 and d.datetype == 'weekend':
             try:
                 divdivseries = popdivdivseries(series,4)
             except:
@@ -146,13 +146,38 @@ def assignfourgamedivdiv(dates,series):
             divlist.remove(divdivseries.awaydiv)
             d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
 
+# To spread out the days off, we try to avoid scheduling a divdiv series
+# for the same division three times in a row.
+def search_for_blackout_div(datesbefore,datesafter):
+    divisions_playing = set()
+    for s in datesbefore.serieslist:
+        if s.seriestype == 'divdiv':
+            divisions_playing.add(s.homediv)
+            divisions_playing.add(s.awaydiv)
+    for s in datesafter.serieslist:
+        if s.seriestype == 'divdiv':
+            if s.homediv in divisions_playing:
+                return s.homediv
+            if s.awaydiv in divisions_playing:
+                return s.awaydiv
+    return 'NoBlackout'
+    
+
 def assignthreegamedivdiv(dates,series):
-    for d in dates:
+    for r in range(0,len(dates)):
+        d = dates[r]
         if not len(d.serieslist) and d.length >= 3:
+            if r in range(1,len(dates)-1):
+                blackout = search_for_blackout_div(dates[r-1],dates[r+1])
+            else:
+                blackout = 'NoBlackout'
             try:
-                divdivseries = popdivdivseries(series,3)
+                divdivseries = popdivdivseries(series,3,blackout)
             except:
-                return None
+                try:
+                    divdivseries = popdivdivseries(series,3)
+                except:
+                    return None
             d.serieslist.append(divdivseries)
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
@@ -200,9 +225,12 @@ def assignthreegameweekdayroundrobin(dates,series):
         if len(d.serieslist):
             continue
         if d.length == 3 and d.datetype == 'weekday':
-            d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[0],2))
-            d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[1],2))
-            d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[2],2))
+            try:
+                d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[0],2))
+                d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[1],2))
+                d.serieslist.append(poproundrobinseriesmin(series,mlbdivisions[2],2))
+            except:
+                raise
 
 def countseries(dates,series):
     assignedcount=0
@@ -241,7 +269,9 @@ def swap_series(allseriesdates,replacementdate,replacementseries):
                 seriesdate.serieslist.append(replacementseries)
                 replacementdate.serieslist.append(i)
                 return
-    print('FAIL')
+    print('ERROR')
+    print('Could not find a series to swap with:')
+    print(replacementseries)
     exit(1)
 
 
@@ -286,7 +316,10 @@ def assigngamestodates(allseriesdates):
                 else:
                     hometeam = teams[s.homediv][m[0]]
                     awayteam = teams[s.awaydiv][m[1]]
-                if random.randint(0,1) and not d.datetype == 'weekend':
+                if d.length-s.numgames == 2:
+                    first = 1
+                    last = d.length-1
+                elif random.randint(0,1) and not d.datetype == 'weekend':
                     first = 0
                     last = s.numgames
                 else:
@@ -331,11 +364,6 @@ def check_series_length(allseriesdates):
                 print(d)
                 print(s)
                 found_issue = True
-            elif d.length > s.numgames+1:
-                print('Error:  too few games in too many days')
-                print(d)
-                print(s)
-                found_issue = True
     return found_issue
 
 def check_for_offdays(schedule):
@@ -347,12 +375,16 @@ def check_for_offdays(schedule):
             if thisteam in teams_playing_today:
                 streak=streak+1
             else:
+                if streak == 0:
+                    firstdate=str(openingday(year)+timedelta(d-1))
+                    lastdate=str(openingday(year)+timedelta(d))
+                    print(thisteam+' has two consecutive days off: '+firstdate+' and '+lastdate)
                 if streak > 20:
                     firstdate=str(openingday(year)+timedelta(d-streak))
                     lastdate=str(openingday(year)+timedelta(d-1))
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+firstdate+' and ending '+lastdate)
                 streak=0
-                print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
+                #print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
                 
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
@@ -362,6 +394,13 @@ assignfourgamedivdiv(allseriesdates,allseries)
 assignthreegamedivdiv(allseriesdates,allseries)
 assignfourgameroundrobin(allseriesdates,allseries)
 assignthreegameweekendroundrobin(allseriesdates,allseries)
+try:
+    assignthreegameweekdayroundrobin(allseriesdates,allseries)
+except:
+    for s in allseriesdates:
+        print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+    print(allseries)
+
 assignthreegameweekdayroundrobin(allseriesdates,allseries)
 if (len(allseries)):
     print(str(len(series))+' series were not assigned.')
@@ -394,6 +433,3 @@ schedule = assigngamestodates(allseriesdates)
 
 check_for_offdays(schedule)
 
-#for s in allseries:
-#    print(s)
-    
