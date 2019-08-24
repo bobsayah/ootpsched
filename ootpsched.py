@@ -376,13 +376,17 @@ def check_for_offdays(schedule):
                 streak=streak+1
             else:
                 if streak == 0:
-                    firstdate=str(openingday(year)+timedelta(d-1))
-                    lastdate=str(openingday(year)+timedelta(d))
-                    print(thisteam+' has two consecutive days off: '+firstdate+' and '+lastdate)
+                    firstdate=openingday(year)+timedelta(d-1)
+                    firststr=firstdate.strftime('%a')+' '+str(firstdate)
+                    lastdate=openingday(year)+timedelta(d)
+                    laststr=lastdate.strftime('%a')+' '+str(lastdate)
+                    print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
                 if streak > 20:
-                    firstdate=str(openingday(year)+timedelta(d-streak))
-                    lastdate=str(openingday(year)+timedelta(d-1))
-                    print(thisteam+' plays '+str(streak)+' consecutive games starting '+firstdate+' and ending '+lastdate)
+                    firstdate=openingday(year)+timedelta(d-streak)
+                    firststr=firstdate.strftime('%a')+' '+str(firstdate)
+                    lastdate=openingday(year)+timedelta(d-1)
+                    laststr=lastdate.strftime('%a')+' '+str(lastdate)
+                    print(thisteam+' plays '+str(streak)+' consecutive games starting '+firststr+' and ending '+laststr)
                 streak=0
                 #print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
                 
