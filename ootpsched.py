@@ -390,6 +390,39 @@ def check_for_offdays(schedule):
                 streak=0
                 #print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
 
+def fix_consecutive_offdays(schedule):
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        for d in range(0,len(schedule)-1):
+            teams_playing_today = [ team for game in schedule[d] for team in game]
+            teams_playing_tomorrow = [ team for game in schedule[d+1] for team in game]
+            if thisteam not in teams_playing_today and thisteam not in teams_playing_tomorrow:
+                dayofweek = (openingday(year)+timedelta(d)).stftime('%a')
+                if (dayofweek == 'Wed'):
+                    for gMon in schedule[d-2].gamelist:
+                        if gMon.home == thisteam:
+                            otherteam = gMon.away
+                        elif g.away == thisteam:
+                            otherteam = gMon.home
+                        else:
+                            continue
+                        if otherteam not in teams_playing_today:
+                            found_Tue_game = False
+                            for gTue in schedule[d-1].gamelist:
+                                if (gTue.home in [thisteam,otherteam] and
+                                    gTue.away in [thisteam,otherteam] and
+                                    gMon.home == gTue.home):
+                                    found_Tue_game = True
+                                    break
+                            if not found_Tue_game:
+                                raise
+                            today = str(openingday(year)+timedelta(d))
+                            twodaysago = str(openingday(year)+timedelta(d-2))
+                            print('Moving game between '+thisteam+' and '+otherteam+' from '+twodaysago+' to '+today)
+                            schedule[d-2].gamelist.remove(gMon)
+                            schedule[d].gamelist.append(gMon)
+                        break
+
 def create_schedule(allseriesdates,allseries):
     assignholidayseries(allseriesdates,allseries)
     assignfourgamedivdiv(allseriesdates,allseries)
@@ -432,7 +465,7 @@ def create_schedule(allseriesdates,allseries):
         return False
 
     schedule = assigngamestodates(allseriesdates)
-
+    fix_consecutive_offdays(schedule)
     check_for_offdays(schedule)
     return True
 
