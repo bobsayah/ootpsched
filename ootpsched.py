@@ -288,7 +288,11 @@ def rearrange_series(allseriesdates):
                     print('Two consecutive series between same sets of teams:'+str(earlier.startdate)+':'+str(later.startdate))
                     print(earlier)
                     print(later)
-                    swap_series(allseriesdates,earlier,i)
+                    # Can't easily swap holiday series, so choose the non-holiday one
+                    if earlier.datetype == 'holiday':
+                        swap_series(allseriesdates,later,j)
+                    else:
+                        swap_series(allseriesdates,earlier,i)
                     print('After replacement')
                     print(earlier)
                     print(later)
