@@ -401,31 +401,41 @@ def fix_consecutive_offdays(schedule):
             teams_playing_today = [ team for game in schedule[d] for team in game]
             teams_playing_tomorrow = [ team for game in schedule[d+1] for team in game]
             if thisteam not in teams_playing_today and thisteam not in teams_playing_tomorrow:
-                dayofweek = (openingday(year)+timedelta(d)).stftime('%a')
+                firstdate=openingday(year)+timedelta(d)
+                firststr=firstdate.strftime('%a')+' '+str(firstdate)
+                lastdate=openingday(year)+timedelta(d+1)
+                laststr=lastdate.strftime('%a')+' '+str(lastdate)
+                print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
+                dayofweek = (openingday(year)+timedelta(d)).strftime('%a')
+                print(dayofweek)
                 if (dayofweek == 'Wed'):
-                    for gMon in schedule[d-2].gamelist:
-                        if gMon.home == thisteam:
-                            otherteam = gMon.away
-                        elif g.away == thisteam:
-                            otherteam = gMon.home
+                    print(schedule[d-2])
+                    for gMon in schedule[d-2]:
+                        print(gMon)
+                        if gMon[0] == thisteam:
+                            otherteam = gMon[1]
+                        elif gMon[1] == thisteam:
+                            otherteam = gMon[0]
                         else:
                             continue
                         if otherteam not in teams_playing_today:
                             found_Tue_game = False
-                            for gTue in schedule[d-1].gamelist:
-                                if (gTue.home in [thisteam,otherteam] and
-                                    gTue.away in [thisteam,otherteam] and
-                                    gMon.home == gTue.home):
+                            for gTue in schedule[d-1]:
+                                if (gTue[0] in [thisteam,otherteam] and
+                                    gTue[1] in [thisteam,otherteam] and
+                                    gMon[0] == gTue[0]):
                                     found_Tue_game = True
                                     break
-                            if not found_Tue_game:
-                                raise
                             today = str(openingday(year)+timedelta(d))
                             twodaysago = str(openingday(year)+timedelta(d-2))
                             print('Moving game between '+thisteam+' and '+otherteam+' from '+twodaysago+' to '+today)
-                            schedule[d-2].gamelist.remove(gMon)
-                            schedule[d].gamelist.append(gMon)
+                            schedule[d-2].remove(gMon)
+                            schedule[d].append(gMon)
+                            if not found_Tue_game:
+                                print('Did not find Tuesday game between these teams')
+                                raise
                         break
+    return
 
 def create_schedule(allseriesdates,allseries):
     assignholidayseries(allseriesdates,allseries)
@@ -469,10 +479,13 @@ def create_schedule(allseriesdates,allseries):
         return False
 
     schedule = assigngamestodates(allseriesdates)
-    try:
-        fix_consecutive_offdays(schedule)
-    except:
-        return False
+    print()
+    print()
+    #try:
+    fix_consecutive_offdays(schedule)
+    #except:
+    #    print('Failure during fix_consecutive_offdays')
+    #    return False
     
     check_for_offdays(schedule)
     return True
