@@ -389,51 +389,56 @@ def check_for_offdays(schedule):
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+firststr+' and ending '+laststr)
                 streak=0
                 #print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
-                
+
+def create_schedule(allseriesdates,allseries):
+    assignholidayseries(allseriesdates,allseries)
+    assignfourgamedivdiv(allseriesdates,allseries)
+    assignthreegamedivdiv(allseriesdates,allseries)
+    assignfourgameroundrobin(allseriesdates,allseries)
+    assignthreegameweekendroundrobin(allseriesdates,allseries)
+    try:
+        assignthreegameweekdayroundrobin(allseriesdates,allseries)
+    except:
+        for s in allseriesdates:
+            print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+        print(allseries)
+
+    assignthreegameweekdayroundrobin(allseriesdates,allseries)
+    if (len(allseries)):
+        print(str(len(series))+' series were not assigned.')
+        return False
+
+    print()
+    if check_series_length(allseriesdates):
+        print(allseriesdates)
+        return False
+        
+    numiters=1
+    while rearrange_series(allseriesdates):
+        numiters=numiters+1
+        continue
+    print('Resolved in '+str(numiters)+' iterations.')
+    if not check_for_consecutive_series(allseriesdates):
+        print(allseriesdates)
+        return False
+
+    for s in allseriesdates:
+        print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+
+    print()
+    print()
+    if check_series_length(allseriesdates):
+        print(allseriesdates)
+        return False
+
+    schedule = assigngamestodates(allseriesdates)
+
+    check_for_offdays(schedule)
+    return True
+
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
-assignholidayseries(allseriesdates,allseries)
-assignfourgamedivdiv(allseriesdates,allseries)
-assignthreegamedivdiv(allseriesdates,allseries)
-assignfourgameroundrobin(allseriesdates,allseries)
-assignthreegameweekendroundrobin(allseriesdates,allseries)
-try:
-    assignthreegameweekdayroundrobin(allseriesdates,allseries)
-except:
-    for s in allseriesdates:
-        print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
-    print(allseries)
-
-assignthreegameweekdayroundrobin(allseriesdates,allseries)
-if (len(allseries)):
-    print(str(len(series))+' series were not assigned.')
-    exit(1)
-
-print()
-if check_series_length(allseriesdates):
-    print(allseriesdates)
-    exit(1)
-    
-numiters=1
-while rearrange_series(allseriesdates):
-    numiters=numiters+1
-    continue
-print('Resolved in '+str(numiters)+' iterations.')
-if not check_for_consecutive_series(allseriesdates):
-    print(allseriesdates)
-    exit(1)
-
-for s in allseriesdates:
-    print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
-
-print()
-print()
-if check_series_length(allseriesdates):
-    print(allseriesdates)
-    exit(1)
-
-schedule = assigngamestodates(allseriesdates)
-
-check_for_offdays(schedule)
+if not create_schedule(allseriesdates,allseries):
+    print('Schedule creation failed.  See above messages for details.')
 
