@@ -465,7 +465,11 @@ def create_schedule(allseriesdates,allseries):
         return False
 
     schedule = assigngamestodates(allseriesdates)
-    fix_consecutive_offdays(schedule)
+    try:
+        fix_consecutive_offdays(schedule)
+    except:
+        return False
+    
     check_for_offdays(schedule)
     return True
 
