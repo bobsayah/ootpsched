@@ -613,7 +613,8 @@ def create_schedule(allseriesdates,allseries):
     #    print('Failure during fix_consecutive_offdays')
     #    return False
     offdayfixuplist = create_offday_fixup_list(schedule)
-    find_and_fix_long_streak(schedule,offdayfixuplist)
+    while find_and_fix_long_streak(schedule,offdayfixuplist):
+        continue
     print()
     print()
     print_schedule(schedule)
