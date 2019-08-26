@@ -11,6 +11,7 @@ teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
           'National' : ['BKN', 'PIT', 'MIL', 'CIN', 'PHI', 'CHI'],
           'Western' : ['STL', 'COL', 'DAL', 'LA', 'KC', 'SF'],
         }
+maxdayswithoutoffday = 21
 
 seriesdates = namedtuple('seriesdates', 'startdate, length, datetype, serieslist')
 series = namedtuple('series', 'seriestype homediv awaydiv numgames seriesnum reversed')
@@ -408,7 +409,7 @@ def check_for_offdays(schedule):
                     lastdate=openingday(year)+timedelta(d)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
-                if streak > 20:
+                if streak > maxdayswithoutoffday:
                     firstdate=openingday(year)+timedelta(d-streak)
                     firststr=firstdate.strftime('%a')+' '+str(firstdate)
                     lastdate=openingday(year)+timedelta(d-1)
@@ -430,12 +431,12 @@ def create_offday_fixup_list(schedule):
             if thisteam in teams_playing_today:
                 streak=streak+1
             else:
-                if prevstreak > 0 and prevstreak+streak < 21:
+                if prevstreak > 0 and prevstreak+streak < maxdayswithoutoffday:
                     teamsavailabletoplayonthisoffday[prev].add(thisteam)
                 prev = d
                 prevstreak = streak
                 streak = 0
-        if prevstreak > 0 and prevstreak+streak < 21:
+        if prevstreak > 0 and prevstreak+streak < maxdayswithoutoffday:
             teamsavailabletoplayonthisoffday[prev].add(thisteam)
     for d in range(0,len(teamsavailabletoplayonthisoffday)):
         if len(teamsavailabletoplayonthisoffday[d]):
@@ -506,9 +507,9 @@ def find_and_fix_long_streak(schedule,fixupdays):
             if thisteam in teams_playing_today:
                 streak=streak+1
             else:
-                if streak > 21:
-                    firstd = max(d-22,d-streak+3)
-                    lastd = min(d-streak+22,d-3)
+                if streak > maxdayswithoutoffday:
+                    firstd = max(d-maxdayswithoutoffday-1,d-streak+3)
+                    lastd = min(d-streak+maxdayswithoutoffday+1,d-3)
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+format_date(d-streak)+' and ending '+format_date(d-1))
                     print('Need to create an open date between '+format_date(firstd)+' and '+format_date(lastd-1))
                     for i in range(firstd,lastd):
