@@ -146,18 +146,19 @@ def assignholidayseries(dates,series):
 def search_for_blackout_div(dates,current_date):
     blackoutdiv = 'NoBlackout'
     divisions_playing = set()
-    for r in range(current_date,0,-1):
-        d = dates[r]
+    if current_date > 2:
+        d = dates[current_date-1]
+        for s in d.serieslist:
+            if s.seriestype == 'divdiv':
+                divisions_playing.add(s.homediv)
+                divisions_playing.add(s.awaydiv)
+        d = dates[current_date-2]
         for s in d.serieslist:
             if s.seriestype == 'divdiv':
                 if s.homediv in divisions_playing:
                     return s.homediv
-                else:
-                    divisions_playing.add(s.homediv)
-                if s.awaydiv in divisions_playing:
+                elif s.awaydiv in divisions_playing:
                     return s.awaydiv
-                else:
-                    divisions_playing.add(s.awaydiv)
     return 'NoBlackout'
 
 def assigndivdiv(dates,series):
@@ -180,7 +181,7 @@ def assigndivdiv(dates,series):
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
             d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
-        elif d.length >= 3:
+        elif d.length >= 3 and d.startdate.strftime('%a') == 'Mon':
             blackout = search_for_blackout_div(dates,r)
             print('Blackout division for '+str(d)+' is '+blackout)
             try:
