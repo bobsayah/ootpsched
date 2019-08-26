@@ -19,8 +19,8 @@ gameday = namedtuple('date', 'gamelist')
 game = namedtuple('home', 'away')
     
 
-def openingday(year):
-    startdate=date(year,4,7)
+def openingday(y=year):
+    startdate=date(y,4,7)
     startdate=startdate+timedelta(4-startdate.weekday())
     return startdate
 
@@ -520,6 +520,9 @@ def find_and_fix_long_streak(schedule,fixupdays):
                     for i in range(firstd,lastd):
                         dayofweek=get_day_of_week(i)
                         if dayofweek in ['Mon', 'Wed', 'Thu']:
+                            if isaholiday(openingday()+timedelta(i)):
+                                print(format_date(i)+' is a holiday')
+                                continue
                             m = get_matchup_for_team(schedule,i,thisteam)
                             print('Search for a swap date for '+str(m)+' on '+format_date(i))
                             if find_open_day_to_move_game_to(schedule,i,m,fixupdays):
