@@ -179,6 +179,7 @@ def assignthreegamedivdiv(dates,series):
         if not len(d.serieslist) and d.length >= 3:
             if r in range(1,len(dates)-1):
                 blackout = search_for_blackout_div(dates[r-1],dates[r+1])
+                print('Blackout division for '+str(d)+' is '+blackout)
             else:
                 blackout = 'NoBlackout'
             try:
@@ -311,6 +312,11 @@ def rearrange_series(allseriesdates):
 def print_schedule(schedule):
     for d in range(0,len(schedule)):
         print(format_date(d)+': '+str(schedule[d]))
+
+def print_series_dates(dates):
+    for s in dates:
+        print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+
         
 def assigngamestodates(allseriesdates):
     seasonlength=0
@@ -571,13 +577,14 @@ def create_schedule(allseriesdates,allseries):
     assignholidayseries(allseriesdates,allseries)
     assignfourgamedivdiv(allseriesdates,allseries)
     assignthreegamedivdiv(allseriesdates,allseries)
+    print_series_dates(allseriesdates)
+    return False
     assignfourgameroundrobin(allseriesdates,allseries)
     assignthreegameweekendroundrobin(allseriesdates,allseries)
     try:
         assignthreegameweekdayroundrobin(allseriesdates,allseries)
     except:
-        for s in allseriesdates:
-            print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+        print_series_dates(allseriesdates)
         print(allseries)
 
     assignthreegameweekdayroundrobin(allseriesdates,allseries)
@@ -587,7 +594,7 @@ def create_schedule(allseriesdates,allseries):
 
     print()
     if check_series_length(allseriesdates):
-        print(allseriesdates)
+        print_series_dates(allseriesdates)
         return False
         
     numiters=1
@@ -605,7 +612,7 @@ def create_schedule(allseriesdates,allseries):
     print()
     print()
     if check_series_length(allseriesdates):
-        print(allseriesdates)
+        print_series_dates(allseriesdates)
         return False
 
     schedule = assigngamestodates(allseriesdates)
