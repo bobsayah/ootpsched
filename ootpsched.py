@@ -168,7 +168,7 @@ def assigndivdiv(dates,series):
             continue
         if d.length == 4 and d.datetype == 'weekend':
             blackout = search_for_blackout_div(dates,r)
-            print('Blackout division for '+str(d)+' is '+blackout)
+            #print('Blackout division for '+str(d)+' is '+blackout)
             try:
                 divdivseries = popdivdivseries(series,4,blackout)
             except:
@@ -183,13 +183,13 @@ def assigndivdiv(dates,series):
             d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
         elif d.length >= 3 and d.startdate.strftime('%a') == 'Mon':
             blackout = search_for_blackout_div(dates,r)
-            print('Blackout division for '+str(d)+' is '+blackout)
+            #print('Blackout division for '+str(d)+' is '+blackout)
             try:
                 divdivseries = popdivdivseries(series,3,blackout)
             except:
-                print('Unable to find a series not containing the '+blackout+' division on '+str(d))
+                #print('Unable to find a series not containing the '+blackout+' division on '+str(d))
                 continue
-            print('Assigning :'+str(divdivseries))
+            #print('Assigning :'+str(divdivseries))
             d.serieslist.append(divdivseries)
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
@@ -354,7 +354,7 @@ def assigngamestodates(allseriesdates):
                     last = d.length
                 for j in range(first,last):
                     gamedays[i+j].append((hometeam, awayteam))
-    print_schedule(gamedays)
+    #print_schedule(gamedays)
     return gamedays
                 
 def check_for_consecutive_series(allseriesdates):
@@ -408,25 +408,16 @@ def check_for_offdays(schedule):
                     lastdate=openingday(year)+timedelta(d)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
-                if streak > 21:
+                if streak > 20:
                     firstdate=openingday(year)+timedelta(d-streak)
                     firststr=firstdate.strftime('%a')+' '+str(firstdate)
                     lastdate=openingday(year)+timedelta(d-1)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+firststr+' and ending '+laststr)
-                if prevstreak > 0 and prevstreak+streak < 21:
-                    print('----> Good day for inserting a game')
-                    for g in schedule[d-1]:
-                        if g[0] == thisteam or g[1] == thisteam:
-                            print(g)
-                    for g in schedule[d+1]:
-                        if g[0] == thisteam or g[1] == thisteam:
-                            print(g)
                 prevstreak=streak
                 streak=0
                 offday=openingday(year)+timedelta(d)
                 offdaystr=offday.strftime('%a')+' '+str(offday)
-                print(thisteam+' has an off day on '+offdaystr)
 
 def create_offday_fixup_list(schedule):
     teamsavailabletoplayonthisoffday = [ set() for d in range(0,len(schedule)) ]
@@ -450,8 +441,8 @@ def create_offday_fixup_list(schedule):
         if len(teamsavailabletoplayonthisoffday[d]):
             offday=openingday(year)+timedelta(d)
             offdaystr=offday.strftime('%a')+' '+str(offday)
-            print('The following teams can have a game added to current off day '+format_date(d)+':') 
-            print('.... '+str(teamsavailabletoplayonthisoffday[d]))
+            #print('The following teams can have a game added to current off day '+format_date(d)+':') 
+            #print('.... '+str(teamsavailabletoplayonthisoffday[d]))
     return teamsavailabletoplayonthisoffday
 
 def schedule_contains_matchup(schedule,d,team1,team2):
@@ -623,18 +614,17 @@ def create_schedule(allseriesdates,allseries):
     schedule = assigngamestodates(allseriesdates)
     print()
     print()
-    #try:
-    fix_consecutive_offdays(schedule)
-    #except:
-    #    print('Failure during fix_consecutive_offdays')
-    #    return False
+    try:
+        fix_consecutive_offdays(schedule)
+    except:
+        print('Failure during fix_consecutive_offdays')
+        return False
     offdayfixuplist = create_offday_fixup_list(schedule)
     while find_and_fix_long_streak(schedule,offdayfixuplist):
         continue
+    check_for_offdays(schedule)
     print()
-    print()
-    #print_schedule(schedule)
-    #check_for_offdays(schedule)
+    print_schedule(schedule)
     return True
 
 random.seed(1)
