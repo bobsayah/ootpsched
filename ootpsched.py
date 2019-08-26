@@ -453,17 +453,25 @@ def schedule_contains_matchup(schedule,d,team1,team2):
     return False
 
 def find_open_day_to_move_game_to(schedule,date_to_free_up,matchup,fixupdays):
+    newdatelist = []
     for d in range(0,len(fixupdays)):
         if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
             print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
             if (schedule_contains_matchup(schedule,d-1,matchup[0],matchup[1]) or
                 schedule_contains_matchup(schedule,d+1,matchup[0],matchup[1]) ):
-                print('Moving game between '+matchup[0]+' and '+matchup[1]+' from '+
+                print('Can move game between '+matchup[0]+' and '+matchup[1]+' from '+
                       format_date(date_to_free_up)+' to '+format_date(d))
-                schedule[date_to_free_up].remove(matchup)
-                schedule[d].append(matchup)
-                return True
-    return False
+                newdatelist.append(d)
+    print(newdatelist)
+    if len(newdatelist):
+        date_to_move_to = random.choice(newdatelist)
+        schedule[date_to_free_up].remove(matchup)
+        schedule[date_to_move_to].append(matchup)
+        print('Moving game between '+matchup[0]+' and '+matchup[1]+' from '+
+                      format_date(date_to_free_up)+' to '+format_date(date_to_move_to))
+        return True
+    else:
+        return False
 
 def find_and_make_series_swap(schedule,date_to_free_up,matchup,fixupdays):
     print('=====')
@@ -622,13 +630,14 @@ def create_schedule(allseriesdates,allseries):
         return False
     offdayfixuplist = create_offday_fixup_list(schedule)
     while find_and_fix_long_streak(schedule,offdayfixuplist):
+        offdayfixuplist = create_offday_fixup_list(schedule)
         continue
     check_for_offdays(schedule)
     print()
     print_schedule(schedule)
     return True
 
-random.seed(1)
+random.seed(2)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
