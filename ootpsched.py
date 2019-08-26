@@ -463,6 +463,7 @@ def find_open_day_to_move_game_to(schedule,date_to_free_up,matchup,fixupdays):
     return False
 
 def find_and_make_series_swap(schedule,date_to_free_up,matchup,fixupdays):
+    print('=====')
     for d in range(0,len(fixupdays)):
         if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
             print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
@@ -493,6 +494,7 @@ def get_matchup_for_team(schedule,d,thisteam):
             return t
     
 def find_and_fix_long_streak(schedule,fixupdays):
+    print('-----')
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
         streak = 0
@@ -516,6 +518,8 @@ def find_and_fix_long_streak(schedule,fixupdays):
                                 return True
                             #if find_and_make_series_swap(schedule,i,m,fixupdays):
                             #    return True
+                    print('Unable to create an open date between '+format_date(firstd)+' and '+format_date(lastd-1))
+                    return False
                 prevstreak=streak
                 streak=0
     return False
@@ -617,7 +621,7 @@ def create_schedule(allseriesdates,allseries):
         continue
     print()
     print()
-    print_schedule(schedule)
+    #print_schedule(schedule)
     #check_for_offdays(schedule)
     return True
 
