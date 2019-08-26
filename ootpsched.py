@@ -442,10 +442,51 @@ def create_offday_fixup_list(schedule):
             print(teamsavailabletoplayonthisoffday[d])
     return teamsavailabletoplayonthisoffday
 
-def find_fixup_day_for_both_teams(fixupdays,team1,team2):
+def find_fixup_day_for_both_teams(schedule,fixupdays,matchup):
     for d in range(0,len(fixupdays)):
-        if team1 in fixupdays[d] and team2 in fixupdays[d]:
-            print(team1+' and '+team2+' both are available on '+format_date(d))
+        if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
+            print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
+            for g in schedule[d-1]:
+                if g[0] == matchup[0] and g[1] == matchup[1]:
+                    print('..and they play on '+format_date(d-1))
+                    return True
+            for g in schedule[d+1]:
+                if g[0] == matchup[0] and g[1] == matchup[1]:
+                    print('..and they play on '+format_date(d+1))
+                    return True
+    for d in range(0,len(fixupdays)):
+        if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
+            print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
+            for g in schedule[d-1]:
+                if g[0] == matchup[1] and g[1] == matchup[0]:
+                    print('..and they play in other stadium on '+format_date(d-1))
+                    
+                    return True
+            for g in schedule[d+1]:
+                if g[0] == matchup[1] and g[1] == matchup[0]:
+                    print('..and they play in other stadium on '+format_date(d+1))
+                    return True
+    return False
+
+def schedule_contains_matchup(schedule,d,team1,team2):
+    for g in schedule[d]:
+        if g[0] == team1 and g[1] == team2:
+            return True
+    return False
+
+def find_and_make_series_swap(schedule,gamedate,opendate,matchup,fixupdays):
+    for d in range(0,len(fixupdays)):
+        if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
+            print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
+            if schedule_contains_matchup(schedule,d-1,matchup[1],matchup[0]):
+                print('..and they play in other stadium on '+format_date(d-1))
+                series_count=1    
+                return True
+            for g in schedule[d+1]:
+                if g[0] == matchup[1] and g[1] == matchup[0]:
+                    print('..and they play in other stadium on '+format_date(d+1))
+                    return True
+    return False
 
 def get_matchup_for_team(schedule,d,thisteam):
     for t in schedule[d]:
@@ -472,9 +513,16 @@ def find_and_fix_long_streak(schedule,fixupdays):
                         dayofweek=get_day_of_week(d)
                         if dayofweek in ['Mon', 'Wed', 'Thu']:
                             print(format_date(i-1))
-                            print(get_matchup_for_team(schedule,i-1,thisteam))
+                            m = get_matchup_for_team(schedule,i-1,thisteam)
+                            print(m)
+                            #if (find_fixup_day_for_both_teams(schedule,fixupdays,m)):
+                            if find_and_make_series_swap(schedule,i-1,i,m,fixupdays):
+                                return True
                             print(format_date(i+1))
-                            print(get_matchup_for_team(schedule,i+1,thisteam))
+                            m = get_matchup_for_team(schedule,i+1,thisteam)
+                            print(m)
+                            if (find_fixup_day_for_both_teams(schedule,fixupdays,m)):
+                                return True
                     updated = True
                     return updated
                 prevstreak=streak
