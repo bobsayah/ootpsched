@@ -182,7 +182,7 @@ def assigndivdiv(dates,series):
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
             d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
-        elif d.length >= 3 and d.startdate.strftime('%a') == 'Mon':
+        elif d.length == 3 and d.startdate.strftime('%a') == 'Mon':
             blackout = search_for_blackout_div(dates,r)
             #print('Blackout division for '+str(d)+' is '+blackout)
             try:
@@ -591,8 +591,6 @@ def create_schedule(allseriesdates,allseries):
     except:
         print_series_dates(allseriesdates)
         print(allseries)
-
-    assignthreegameweekdayroundrobin(allseriesdates,allseries)
     if (len(allseries)):
         print(str(len(series))+' series were not assigned.')
         return False
@@ -637,7 +635,7 @@ def create_schedule(allseriesdates,allseries):
     print_schedule(schedule)
     return True
 
-random.seed(2)
+random.seed(3)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
