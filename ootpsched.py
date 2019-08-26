@@ -142,7 +142,8 @@ def assignholidayseries(dates,series):
                 d.serieslist.append(poproundrobinseriesexact(series,div,d.length))
 
 def assignfourgamedivdiv(dates,series):
-    for d in dates:
+    for r in range(0,len(dates)):
+        d = dates[r]
         if len(d.serieslist):
             continue
         if d.length == 4 and d.datetype == 'weekend':
@@ -178,7 +179,7 @@ def assignthreegamedivdiv(dates,series):
         d = dates[r]
         if not len(d.serieslist) and d.length >= 3:
             if r in range(1,len(dates)-1):
-                blackout = search_for_blackout_div(dates[r-1],dates[r+1])
+                blackout = search_for_blackout_div(dates[r-1],dates[r-2])
                 print('Blackout division for '+str(d)+' is '+blackout)
             else:
                 blackout = 'NoBlackout'
@@ -187,6 +188,7 @@ def assignthreegamedivdiv(dates,series):
             except:
                 print('Unable to find a series not containing the '+blackout+' division on '+str(d))
                 continue
+            print('Assigning :'+str(divdivseries))
             d.serieslist.append(divdivseries)
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
@@ -577,8 +579,6 @@ def create_schedule(allseriesdates,allseries):
     assignholidayseries(allseriesdates,allseries)
     assignfourgamedivdiv(allseriesdates,allseries)
     assignthreegamedivdiv(allseriesdates,allseries)
-    print_series_dates(allseriesdates)
-    return False
     assignfourgameroundrobin(allseriesdates,allseries)
     assignthreegameweekendroundrobin(allseriesdates,allseries)
     try:
