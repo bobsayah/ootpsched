@@ -407,11 +407,8 @@ def fix_consecutive_offdays(schedule):
                 laststr=lastdate.strftime('%a')+' '+str(lastdate)
                 print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
                 dayofweek = (openingday(year)+timedelta(d)).strftime('%a')
-                print(dayofweek)
                 if (dayofweek == 'Wed'):
-                    print(schedule[d-2])
                     for gMon in schedule[d-2]:
-                        print(gMon)
                         if gMon[0] == thisteam:
                             otherteam = gMon[1]
                         elif gMon[1] == thisteam:
@@ -435,6 +432,9 @@ def fix_consecutive_offdays(schedule):
                                 print('Did not find Tuesday game between these teams')
                                 raise
                         break
+                else:
+                    print('Fixing offday issues on days other than Wed not yet supported')
+                    raise
     return
 
 def create_schedule(allseriesdates,allseries):
