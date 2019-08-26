@@ -455,7 +455,8 @@ def find_open_day_to_move_game_to(schedule,date_to_free_up,matchup,fixupdays):
             print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
             if (schedule_contains_matchup(schedule,d-1,matchup[0],matchup[1]) or
                 schedule_contains_matchup(schedule,d+1,matchup[0],matchup[1]) ):
-                print('Available swap date: '+format_date(d))
+                print('Moving game between '+matchup[0]+' and '+matchup[1]+' from '+
+                      format_date(date_to_free_up)+' to '+format_date(d))
                 schedule[date_to_free_up].remove(matchup)
                 schedule[d].append(matchup)
                 return True
