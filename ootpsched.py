@@ -17,11 +17,21 @@ series = namedtuple('series', 'seriestype homediv awaydiv numgames seriesnum rev
 matchup = namedtuple('matchup', 'home away')
 gameday = namedtuple('date', 'gamelist')
 game = namedtuple('home', 'away')
+    
 
 def openingday(year):
     startdate=date(year,4,7)
     startdate=startdate+timedelta(4-startdate.weekday())
     return startdate
+
+def format_date(d):
+    thisdate=openingday(year)+timedelta(d)
+    datestr=thisdate.strftime('%a')+' '+str(thisdate)
+    return datestr
+
+def get_day_of_week(d):
+    thisdate=openingday(year)+timedelta(d)
+    return thisdate.strftime('%a')
     
 def isaholiday(mydate):
 
@@ -430,8 +440,47 @@ def create_offday_fixup_list(schedule):
             offdaystr=offday.strftime('%a')+' '+str(offday)
             print(offdaystr)
             print(teamsavailabletoplayonthisoffday[d])
-    
+    return teamsavailabletoplayonthisoffday
 
+def find_fixup_day_for_both_teams(fixupdays,team1,team2):
+    for d in range(0,len(fixupdays)):
+        if team1 in fixupdays[d] and team2 in fixupdays[d]:
+            print(team1+' and '+team2+' both are available on '+format_date(d))
+
+def get_matchup_for_team(schedule,d,thisteam):
+    for t in schedule[d]:
+        if t[0] == thisteam or t[1] == thisteam:
+            return t
+    
+def find_and_fix_long_streak(schedule,fixupdays):
+    updated = False
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        streak = 0
+        prevstreak=0
+        for d in range(0,len(schedule)):
+            teams_playing_today = [ team for game in schedule[d] for team in game]
+            if thisteam in teams_playing_today:
+                streak=streak+1
+            else:
+                if streak > 21:
+                    firstd = d-22
+                    lastd = d-streak+21
+                    print(thisteam+' plays '+str(streak)+' consecutive games starting '+format_date(d-streak)+' and ending '+format_date(d-1))
+                    print('Need to create an open date between '+format_date(d-22)+' and '+format_date(d-streak+21))
+                    for i in (firstd,lastd+1):
+                        dayofweek=get_day_of_week(d)
+                        if dayofweek in ['Mon', 'Wed', 'Thu']:
+                            print(format_date(i-1))
+                            print(get_matchup_for_team(schedule,i-1,thisteam))
+                            print(format_date(i+1))
+                            print(get_matchup_for_team(schedule,i+1,thisteam))
+                    updated = True
+                    return updated
+                prevstreak=streak
+                streak=0
+    return updated
+                
 def fix_consecutive_offdays(schedule):
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
@@ -524,7 +573,8 @@ def create_schedule(allseriesdates,allseries):
     #except:
     #    print('Failure during fix_consecutive_offdays')
     #    return False
-    create_offday_fixup_list(schedule)
+    offdayfixuplist = create_offday_fixup_list(schedule)
+    find_and_fix_long_streak(schedule,offdayfixuplist)
     #check_for_offdays(schedule)
     return True
 
