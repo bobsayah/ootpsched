@@ -141,48 +141,46 @@ def assignholidayseries(dates,series):
             for div in mlbdivisions:
                 d.serieslist.append(poproundrobinseriesexact(series,div,d.length))
 
-def assignfourgamedivdiv(dates,series):
+# To spread out the days off, we try to avoid scheduling a divdiv series
+# for the same division three times in a row.
+def search_for_blackout_div(dates,current_date):
+    blackoutdiv = 'NoBlackout'
+    divisions_playing = set()
+    for r in range(current_date,0,-1):
+        d = dates[r]
+        for s in d.serieslist:
+            if s.seriestype == 'divdiv':
+                if s.homediv in divisions_playing:
+                    return s.homediv
+                else:
+                    divisions_playing.add(s.homediv)
+                if s.awaydiv in divisions_playing:
+                    return s.awaydiv
+                else:
+                    divisions_playing.add(s.awaydiv)
+    return 'NoBlackout'
+
+def assigndivdiv(dates,series):
     for r in range(0,len(dates)):
         d = dates[r]
-        if len(d.serieslist):
-            continue
         if d.length == 4 and d.datetype == 'weekend':
+            blackout = search_for_blackout_div(dates,r)
+            print('Blackout division for '+str(d)+' is '+blackout)
             try:
-                divdivseries = popdivdivseries(series,4)
+                divdivseries = popdivdivseries(series,4,blackout)
             except:
-                return None
+                try:
+                    divdivseries = popdivdivseries(series,4)
+                except:
+                    return None
             d.serieslist.append(divdivseries)
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
             d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
-
-# To spread out the days off, we try to avoid scheduling a divdiv series
-# for the same division three times in a row.
-def search_for_blackout_div(datesbefore,datesafter):
-    divisions_playing = set()
-    for s in datesbefore.serieslist:
-        if s.seriestype == 'divdiv':
-            divisions_playing.add(s.homediv)
-            divisions_playing.add(s.awaydiv)
-    for s in datesafter.serieslist:
-        if s.seriestype == 'divdiv':
-            if s.homediv in divisions_playing:
-                return s.homediv
-            if s.awaydiv in divisions_playing:
-                return s.awaydiv
-    return 'NoBlackout'
-    
-
-def assignthreegamedivdiv(dates,series):
-    for r in range(0,len(dates)):
-        d = dates[r]
-        if not len(d.serieslist) and d.length >= 3:
-            if r in range(1,len(dates)-1):
-                blackout = search_for_blackout_div(dates[r-1],dates[r-2])
-                print('Blackout division for '+str(d)+' is '+blackout)
-            else:
-                blackout = 'NoBlackout'
+        elif d.length >= 3:
+            blackout = search_for_blackout_div(dates,r)
+            print('Blackout division for '+str(d)+' is '+blackout)
             try:
                 divdivseries = popdivdivseries(series,3,blackout)
             except:
@@ -200,6 +198,8 @@ def assignthreegamedivdiv(dates,series):
                     d.serieslist.append(poproundrobinseriesmin(series,divlist[0],3))
             else:
                 d.serieslist.append(poproundrobinseriesexact(series,divlist[0],2))
+        if not len(series):
+            break
 
 def assignfourgameroundrobin(dates,series):
     for d in dates:
@@ -580,8 +580,7 @@ def fix_consecutive_offdays(schedule):
 
 def create_schedule(allseriesdates,allseries):
     assignholidayseries(allseriesdates,allseries)
-    assignfourgamedivdiv(allseriesdates,allseries)
-    assignthreegamedivdiv(allseriesdates,allseries)
+    assigndivdiv(allseriesdates,allseries)
     assignfourgameroundrobin(allseriesdates,allseries)
     assignthreegameweekendroundrobin(allseriesdates,allseries)
     try:
