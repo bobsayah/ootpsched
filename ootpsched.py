@@ -184,10 +184,8 @@ def assignthreegamedivdiv(dates,series):
             try:
                 divdivseries = popdivdivseries(series,3,blackout)
             except:
-                try:
-                    divdivseries = popdivdivseries(series,3)
-                except:
-                    return None
+                print('Unable to find a series not containing the '+blackout+' division on '+str(d))
+                continue
             d.serieslist.append(divdivseries)
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
@@ -438,8 +436,8 @@ def create_offday_fixup_list(schedule):
         if len(teamsavailabletoplayonthisoffday[d]):
             offday=openingday(year)+timedelta(d)
             offdaystr=offday.strftime('%a')+' '+str(offday)
-            print(offdaystr)
-            print(teamsavailabletoplayonthisoffday[d])
+            print('The following teams are available to play on '+format_date(d)+':') 
+            print('.... '+str(teamsavailabletoplayonthisoffday[d]))
     return teamsavailabletoplayonthisoffday
 
 def find_fixup_day_for_both_teams(schedule,fixupdays,matchup):
@@ -474,18 +472,29 @@ def schedule_contains_matchup(schedule,d,team1,team2):
             return True
     return False
 
-def find_and_make_series_swap(schedule,gamedate,opendate,matchup,fixupdays):
+def find_and_make_series_swap(schedule,date_to_free_up,matchup,fixupdays):
     for d in range(0,len(fixupdays)):
         if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
             print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
             if schedule_contains_matchup(schedule,d-1,matchup[1],matchup[0]):
-                print('..and they play in other stadium on '+format_date(d-1))
-                series_count=1    
-                return True
-            for g in schedule[d+1]:
-                if g[0] == matchup[1] and g[1] == matchup[0]:
-                    print('..and they play in other stadium on '+format_date(d+1))
-                    return True
+                to_series_count=1
+                while schedule_contains_matchup(schedule,d-1-to_series_count,matchup[1],matchup[0]):
+                    to_series_count=to_series_count+1
+                print('..and they play in a '+str(to_series_count)+' game series in other stadium on '+format_date(d-to_series_count))
+                if schedule_contains_matchup(schedule,date_to_free_up+1,matchup[0],matchup[1]):
+                    from_series_count=2
+                    while schedule_contains_matchup(schedule,date_to_free_up+from_series_count,matchup[0],matchup[1]):
+                        from_series_count=from_series_count+1
+                    if (from_series_count == to_series_count+1):
+                        print('....to be swapped with a '+str(from_series_count)+' game series starting on '+format_date(date_to_free_up))
+                        return True
+                elif schedule_contains_matchup(schedule,date_to_free_up-1,matchup[0],matchup[1]):
+                    from_series_count=2
+                    while schedule_contains_matchup(schedule,date_to_free_up-from_series_count,matchup[0],matchup[1]):
+                        from_series_count=from_series_count+1
+                    if (from_series_count == to_series_count+1):
+                        print('....to be swapped with a '+str(from_series_count)+' game series starting on '+format_date(date_to_free_up-from_series_count+1))
+                        return True
     return False
 
 def get_matchup_for_team(schedule,d,thisteam):
@@ -494,7 +503,6 @@ def get_matchup_for_team(schedule,d,thisteam):
             return t
     
 def find_and_fix_long_streak(schedule,fixupdays):
-    updated = False
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
         streak = 0
@@ -509,25 +517,17 @@ def find_and_fix_long_streak(schedule,fixupdays):
                     lastd = d-streak+21
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+format_date(d-streak)+' and ending '+format_date(d-1))
                     print('Need to create an open date between '+format_date(d-22)+' and '+format_date(d-streak+21))
-                    for i in (firstd,lastd+1):
-                        dayofweek=get_day_of_week(d)
+                    for i in range(firstd,lastd+1):
+                        dayofweek=get_day_of_week(i)
                         if dayofweek in ['Mon', 'Wed', 'Thu']:
-                            print(format_date(i-1))
-                            m = get_matchup_for_team(schedule,i-1,thisteam)
-                            print(m)
+                            m = get_matchup_for_team(schedule,i,thisteam)
+                            print('Search for a swap date for '+str(m)+' on '+format_date(i))
                             #if (find_fixup_day_for_both_teams(schedule,fixupdays,m)):
-                            if find_and_make_series_swap(schedule,i-1,i,m,fixupdays):
+                            if find_and_make_series_swap(schedule,i,m,fixupdays):
                                 return True
-                            print(format_date(i+1))
-                            m = get_matchup_for_team(schedule,i+1,thisteam)
-                            print(m)
-                            if (find_fixup_day_for_both_teams(schedule,fixupdays,m)):
-                                return True
-                    updated = True
-                    return updated
                 prevstreak=streak
                 streak=0
-    return updated
+    return False
                 
 def fix_consecutive_offdays(schedule):
     allteams = [ team for div in teams for team in teams[div]]
