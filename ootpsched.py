@@ -163,6 +163,8 @@ def search_for_blackout_div(dates,current_date):
 def assigndivdiv(dates,series):
     for r in range(0,len(dates)):
         d = dates[r]
+        if d.serieslist != []:
+            continue
         if d.length == 4 and d.datetype == 'weekend':
             blackout = search_for_blackout_div(dates,r)
             print('Blackout division for '+str(d)+' is '+blackout)
