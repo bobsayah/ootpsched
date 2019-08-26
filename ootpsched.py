@@ -374,6 +374,7 @@ def check_for_offdays(schedule):
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
         streak = 0
+        prevstreak=0
         for d in range(0,len(schedule)):
             teams_playing_today = [ team for game in schedule[d] for team in game]
             if thisteam in teams_playing_today:
@@ -385,14 +386,51 @@ def check_for_offdays(schedule):
                     lastdate=openingday(year)+timedelta(d)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
-                if streak > 20:
+                if streak > 21:
                     firstdate=openingday(year)+timedelta(d-streak)
                     firststr=firstdate.strftime('%a')+' '+str(firstdate)
                     lastdate=openingday(year)+timedelta(d-1)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+firststr+' and ending '+laststr)
+                if prevstreak > 0 and prevstreak+streak < 21:
+                    print('----> Good day for inserting a game')
+                    for g in schedule[d-1]:
+                        if g[0] == thisteam or g[1] == thisteam:
+                            print(g)
+                    for g in schedule[d+1]:
+                        if g[0] == thisteam or g[1] == thisteam:
+                            print(g)
+                prevstreak=streak
                 streak=0
-                #print(thisteam+' has an off day on '+str(openingday(year)+timedelta(d)))
+                offday=openingday(year)+timedelta(d)
+                offdaystr=offday.strftime('%a')+' '+str(offday)
+                print(thisteam+' has an off day on '+offdaystr)
+
+def create_offday_fixup_list(schedule):
+    teamsavailabletoplayonthisoffday = [ set() for d in range(0,len(schedule)) ]
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        streak = 0
+        prevstreak = 0
+        for d in range(0,len(schedule)):
+            teams_playing_today = [ team for game in schedule[d] for team in game]
+            if thisteam in teams_playing_today:
+                streak=streak+1
+            else:
+                if prevstreak > 0 and prevstreak+streak < 21:
+                    teamsavailabletoplayonthisoffday[prev].add(thisteam)
+                prev = d
+                prevstreak = streak
+                streak = 0
+        if prevstreak > 0 and prevstreak+streak < 21:
+            teamsavailabletoplayonthisoffday[prev].add(thisteam)
+    for d in range(0,len(teamsavailabletoplayonthisoffday)):
+        if len(teamsavailabletoplayonthisoffday[d]):
+            offday=openingday(year)+timedelta(d)
+            offdaystr=offday.strftime('%a')+' '+str(offday)
+            print(offdaystr)
+            print(teamsavailabletoplayonthisoffday[d])
+    
 
 def fix_consecutive_offdays(schedule):
     allteams = [ team for div in teams for team in teams[div]]
@@ -486,10 +524,11 @@ def create_schedule(allseriesdates,allseries):
     #except:
     #    print('Failure during fix_consecutive_offdays')
     #    return False
-    
-    check_for_offdays(schedule)
+    create_offday_fixup_list(schedule)
+    #check_for_offdays(schedule)
     return True
 
+random.seed(1)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
