@@ -551,6 +551,51 @@ def find_and_fix_long_streak(schedule,fixupdays):
                 prevstreak=streak
                 streak=0
     return False
+
+def fill_open_dates(schedule,fixupdays):
+    for d in range(0,len(schedule)):
+        if schedule[d] == []:
+            allteams = fixupdays[d].copy()
+            thisteam = random.sample(allteams,1)[0]
+            allteams.remove(thisteam)
+            if get_day_of_week(d) == 'Mon':
+                m = get_matchup_for_team(schedule,d+1,thisteam)
+                otherteam = [t for t in m if t != thisteam][0]
+                if (otherteam in allteams and
+                    get_matchup_for_team(schedule,d+2,thisteam) == m ):
+                    if (get_matchup_for_team(schedule,d+3,thisteam) != m and
+                        get_matchup_for_team(schedule,d+3,thisteam) != None and
+                        get_matchup_for_team(schedule,d+3,otherteam) != None):
+                        print('Moving '+str(m)+' on '+format_date(d+2)+' to '+format_date(d))
+                        schedule[d].append(m)
+                        schedule[d+2].remove(m)
+                        continue
+                    elif (get_matchup_for_team(schedule,d+3,thisteam) == m and
+                        get_matchup_for_team(schedule,d+4,thisteam) != None and
+                        get_matchup_for_team(schedule,d+4,otherteam) != None):
+                        print('Moving '+str(m)+' on '+format_date(d+3)+' to '+format_date(d))
+                        schedule[d].append(m)
+                        schedule[d+3].remove(m)
+                        continue
+                m = get_matchup_for_team(schedule,d-1,thisteam)
+                otherteam = [t for t in m if t != thisteam][0]
+                if (otherteam in allteams and
+                    get_matchup_for_team(schedule,d-2,thisteam) == m and
+                    get_matchup_for_team(schedule,d-3,thisteam) == m and
+                    get_matchup_for_team(schedule,d-4,thisteam) == m and
+                    get_matchup_for_team(schedule,d-5,thisteam) != None and
+                    get_matchup_for_team(schedule,d-5,otherteam) != None):
+                    print('Moving '+str(m)+' on '+format_date(d-4)+' to '+format_date(d))
+                    schedule[d].append(m)
+                    schedule[d-4].remove(m)
+                    continue
+                print('Unable to find a way to fill open day on '+format_date(d))
+                raise
+            else:
+                print('Need logic to implement fill_open_dates on '+get_day_of_week(d))
+                raise                
+    return True
+                
                 
 def fix_consecutive_offdays(schedule):
     allteams = [ team for div in teams for team in teams[div]]
@@ -636,6 +681,8 @@ def create_schedule(allseriesdates,allseries):
         print('Failure during fix_consecutive_offdays')
         return False
     offdayfixuplist = create_offday_fixup_list(schedule)
+    fill_open_dates(schedule,offdayfixuplist)
+    
     while find_and_fix_long_streak(schedule,offdayfixuplist):
         offdayfixuplist = create_offday_fixup_list(schedule)
         continue
