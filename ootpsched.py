@@ -488,28 +488,42 @@ def find_open_day_to_move_game_to(schedule,date_to_free_up,matchup,fixupdays):
         return False
 
 def find_and_make_series_swap(schedule,date_to_free_up,matchup,fixupdays):
-    print('=====')
+    print('=====find_and_make_series_swap=====')
     for d in range(0,len(fixupdays)):
         if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
             print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
-            if schedule_contains_matchup(schedule,d-1,matchup[1],matchup[0]):
+            if schedule_contains_matchup(schedule,d+1,matchup[1],matchup[0]):
                 to_series_count=1
-                while schedule_contains_matchup(schedule,d-1-to_series_count,matchup[1],matchup[0]):
+                while schedule_contains_matchup(schedule,d+1+to_series_count,matchup[1],matchup[0]):
                     to_series_count=to_series_count+1
-                print('..and they play in a '+str(to_series_count)+' game series in other stadium on '+format_date(d-to_series_count))
+                print('..and they play in a '+str(to_series_count)+' game series in other stadium on '+format_date(d+to_series_count))
                 if schedule_contains_matchup(schedule,date_to_free_up+1,matchup[0],matchup[1]):
                     from_series_count=2
                     while schedule_contains_matchup(schedule,date_to_free_up+from_series_count,matchup[0],matchup[1]):
                         from_series_count=from_series_count+1
                     if (from_series_count == to_series_count+1):
                         print('....to be swapped with a '+str(from_series_count)+' game series starting on '+format_date(date_to_free_up))
+                        for i in range(0,from_series_count):
+                            schedule[date_to_free_up+i].remove(matchup)
+                            schedule[d+i].append(matchup)
+                        reverse_matchup = matchup[1], matchup[0]
+                        for i in range(1,from_series_count):
+                            schedule[d+i].remove(reverse_matchup)
+                            schedule[date_to_free_up+i].append(reverse_matchup)
                         return True
                 elif schedule_contains_matchup(schedule,date_to_free_up-1,matchup[0],matchup[1]):
                     from_series_count=2
                     while schedule_contains_matchup(schedule,date_to_free_up-from_series_count,matchup[0],matchup[1]):
                         from_series_count=from_series_count+1
                     if (from_series_count == to_series_count+1):
-                        print('....to be swapped with a '+str(from_series_count)+' game series starting on '+format_date(date_to_free_up-from_series_count+1))
+                        print('....to be swapped with a '+str(from_series_count)+' game series ending on '+format_date(date_to_free_up))
+                        for i in range(0,from_series_count):
+                            schedule[date_to_free_up-i].remove(matchup)
+                            schedule[d+i].append(matchup)
+                        reverse_matchup = matchup[1], matchup[0]
+                        for i in range(1,from_series_count):
+                            schedule[d+i].remove(reverse_matchup)
+                            schedule[date_to_free_up-i].append(reverse_matchup)
                         return True
     return False
 
@@ -544,8 +558,8 @@ def find_and_fix_long_streak(schedule,fixupdays):
                             print('Search for a swap date for '+str(m)+' on '+format_date(i))
                             if find_open_day_to_move_game_to(schedule,i,m,fixupdays):
                                 return True
-                            #if find_and_make_series_swap(schedule,i,m,fixupdays):
-                            #    return True
+                            if find_and_make_series_swap(schedule,i,m,fixupdays):
+                                return True
                     print('Unable to create an open date between '+format_date(firstd)+' and '+format_date(lastd-1))
                     return False
                 prevstreak=streak
@@ -692,7 +706,7 @@ def create_schedule(allseriesdates,allseries):
         return False
     return True
 
-random.seed(4)
+random.seed(6)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
