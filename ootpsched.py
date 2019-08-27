@@ -206,7 +206,7 @@ def assigndivdiv(dates,series):
             break
 
 def assignfourgameroundrobin(dates,series):
-    for d in dates:
+    for d in reversed(dates):
         if len(d.serieslist):
             continue
         if d.length == 4:
@@ -635,7 +635,7 @@ def create_schedule(allseriesdates,allseries):
     print_schedule(schedule)
     return True
 
-random.seed(3)
+random.seed(1)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
