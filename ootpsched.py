@@ -316,8 +316,12 @@ def rearrange_series(allseriesdates):
     return something_rearranged
 
 def print_schedule(schedule):
+    print()
+    print('----Begin schedule----')
     for d in range(0,len(schedule)):
         print(format_date(d)+': '+str(schedule[d]))
+    print('-----End schedule-----')
+    print()
 
 def print_series_dates(dates):
     for s in dates:
@@ -394,6 +398,7 @@ def check_series_length(allseriesdates):
     return found_issue
 
 def check_for_offdays(schedule):
+    all_okay = True
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
         streak = 0
@@ -409,16 +414,25 @@ def check_for_offdays(schedule):
                     lastdate=openingday(year)+timedelta(d)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' has two consecutive days off: '+firststr+' and '+laststr)
+                    all_okay = False
                 if streak > maxdayswithoutoffday:
                     firstdate=openingday(year)+timedelta(d-streak)
                     firststr=firstdate.strftime('%a')+' '+str(firstdate)
                     lastdate=openingday(year)+timedelta(d-1)
                     laststr=lastdate.strftime('%a')+' '+str(lastdate)
                     print(thisteam+' plays '+str(streak)+' consecutive games starting '+firststr+' and ending '+laststr)
+                    all_okay = False
                 prevstreak=streak
                 streak=0
-                offday=openingday(year)+timedelta(d)
-                offdaystr=offday.strftime('%a')+' '+str(offday)
+    return all_okay
+
+def check_schedule(schedule):
+    all_okay = check_for_offdays(schedule)
+    for d in range(0,len(schedule)):
+        if schedule[d] == []:
+            print('No games scheduled for '+format_date(d))
+            all_okay = False
+    return all_okay
 
 def create_offday_fixup_list(schedule):
     teamsavailabletoplayonthisoffday = [ set() for d in range(0,len(schedule)) ]
@@ -595,7 +609,6 @@ def create_schedule(allseriesdates,allseries):
         print(str(len(series))+' series were not assigned.')
         return False
 
-    print()
     if check_series_length(allseriesdates):
         print_series_dates(allseriesdates)
         return False
@@ -612,15 +625,11 @@ def create_schedule(allseriesdates,allseries):
     for s in allseriesdates:
         print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
 
-    print()
-    print()
     if check_series_length(allseriesdates):
         print_series_dates(allseriesdates)
         return False
 
     schedule = assigngamestodates(allseriesdates)
-    print()
-    print()
     try:
         fix_consecutive_offdays(schedule)
     except:
@@ -630,12 +639,13 @@ def create_schedule(allseriesdates,allseries):
     while find_and_fix_long_streak(schedule,offdayfixuplist):
         offdayfixuplist = create_offday_fixup_list(schedule)
         continue
-    check_for_offdays(schedule)
-    print()
     print_schedule(schedule)
+    if not check_schedule(schedule):
+        print('Issues found with schedule - see error messages')
+        return False
     return True
 
-random.seed(1)
+random.seed(4)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
