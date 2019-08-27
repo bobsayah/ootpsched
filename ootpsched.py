@@ -489,7 +489,7 @@ def find_open_day_to_move_game_to(schedule,date_to_free_up,matchup,fixupdays):
 
 def find_and_make_series_swap(schedule,date_to_free_up,matchup,fixupdays):
     print('=====find_and_make_series_swap=====')
-    for d in range(0,len(fixupdays)):
+    for d in range(0,len(schedule)):
         if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
             print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
             if schedule_contains_matchup(schedule,d+1,matchup[1],matchup[0]):
@@ -527,10 +527,36 @@ def find_and_make_series_swap(schedule,date_to_free_up,matchup,fixupdays):
                         return True
     return False
 
+def shift_two_game_series_to_make_room(schedule,date_to_free_up,matchup,fixupdays):
+    print('=====shift_two_game_series_to_make_room=====')
+    for d in range(0,len(schedule)):
+        if matchup[0] in fixupdays[d] and matchup[1] in fixupdays[d]:
+            print(matchup[0]+' and '+matchup[1]+' both are available on '+format_date(d))
+            if schedule_contains_matchup(schedule,d+3,matchup[0],matchup[1]):
+                other_match_home = get_matchup_for_team(schedule,d+1,matchup[0])
+                other_team1 = [ team for team in other_match_home if team != matchup[0]][0]
+                other_match_away = get_matchup_for_team(schedule,d+1,matchup[1])
+                other_team2 = [ team for team in other_match_away if team != matchup[1]][0]
+                if (get_matchup_for_team(schedule,d+2,matchup[0]) == other_match_home and
+                    get_matchup_for_team(schedule,d+2,matchup[1]) == other_match_away and
+                    get_matchup_for_team(schedule,d,matchup[0]) == None and
+                    get_matchup_for_team(schedule,d,matchup[1]) == None):
+                    print('Shifting games from '+format_date(d+2)+' to '+format_date(d))
+                    print('  to allow moving of '+str(matchup)+' from ' +format_date(date_to_free_up)+' to '+format_date(d+2))
+                    schedule[d].append(other_match_home)
+                    schedule[d+2].remove(other_match_home)
+                    schedule[d].append(other_match_away)
+                    schedule[d+2].remove(other_match_away)
+                    schedule[d+2].append(matchup)
+                    schedule[date_to_free_up].remove(matchup)
+                    return True
+    return False
+
 def get_matchup_for_team(schedule,d,thisteam):
     for t in schedule[d]:
         if t[0] == thisteam or t[1] == thisteam:
             return t
+    return None
     
 def find_and_fix_long_streak(schedule,fixupdays):
     print('-----')
@@ -559,6 +585,8 @@ def find_and_fix_long_streak(schedule,fixupdays):
                             if find_open_day_to_move_game_to(schedule,i,m,fixupdays):
                                 return True
                             if find_and_make_series_swap(schedule,i,m,fixupdays):
+                                return True
+                            if shift_two_game_series_to_make_room(schedule,i,m,fixupdays):
                                 return True
                     print('Unable to create an open date between '+format_date(firstd)+' and '+format_date(lastd-1))
                     return False
@@ -696,9 +724,11 @@ def create_schedule(allseriesdates,allseries):
         return False
     offdayfixuplist = create_offday_fixup_list(schedule)
     fill_open_dates(schedule,offdayfixuplist)
-    
-    while find_and_fix_long_streak(schedule,offdayfixuplist):
+
+    iters=0
+    while find_and_fix_long_streak(schedule,offdayfixuplist) and iters < 10:
         offdayfixuplist = create_offday_fixup_list(schedule)
+        iters=iters+1
         continue
     print_schedule(schedule)
     if not check_schedule(schedule):
