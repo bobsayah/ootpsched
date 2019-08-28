@@ -476,7 +476,6 @@ def find_open_day_to_move_game_to(schedule,date_to_free_up,matchup,fixupdays):
                 print('Can move game between '+matchup[0]+' and '+matchup[1]+' from '+
                       format_date(date_to_free_up)+' to '+format_date(d))
                 newdatelist.append(d)
-    print(newdatelist)
     if len(newdatelist):
         date_to_move_to = random.choice(newdatelist)
         schedule[date_to_free_up].remove(matchup)
@@ -736,7 +735,7 @@ def create_schedule(allseriesdates,allseries):
         return False
     return True
 
-random.seed(6)
+random.seed(7)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
