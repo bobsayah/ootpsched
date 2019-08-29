@@ -457,14 +457,45 @@ def check_for_long_homestands_and_roadtrips(schedule):
             all_okay = False
     return all_okay
 
-def fix_long_homestand(schedule,team,firsthomegame,lasthomegame):
+def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupdays):
+    print('=====find_home_away_swap=====')
+    d = 0
+    while d < len(schedule):
+        matchup_length = 0
+        while d < len(schedule) and schedule_contains_matchup(schedule,d,matchup[1],matchup[0]):
+            d=d+1
+            matchup_length=matchup_length+1
+        if matchup_length > 0:
+            if (matchup_length == series_length):
+                print('Found series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+            else:
+                print('Possible series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                if (matchup_length == series_length+1):
+                    date_before = series_start_date-1
+                    if (matchup[0] in fixupdays[date_before] and
+                        matchup[1] in fixupdays[date_before]):
+                        print('Can swap '+str(matchup_length)+' days from '+format_date(date_before)+' until '+format_date(date_before+matchup_length-1))
+                        print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
+                    else:
+                        print('Nope - not available to extend before')
+                    date_after = series_start_date+series_length
+                    if (matchup[0] in fixupdays[date_after] and
+                        matchup[1] in fixupdays[date_after]):
+                        print('Can swap '+str(matchup_length)+' days from '+format_date(series_start_date)+' until '+format_date(date_after))
+                        print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
+                    else:
+                        print('Nope - not available to extend after')
+                    
+        d = d+1
+
+def fix_long_homestand(schedule,team,firsthomegame,lasthomegame,fixupdays):
     firstdate=lasthomegame-maxhomestand
     lastdate=firsthomegame+maxhomestand
     while(get_matchup_for_team(schedule,firstdate,team) == get_matchup_for_team(schedule,firstdate-1,team)):
         firstdate = firstdate-1
     while(get_matchup_for_team(schedule,lastdate,team) == get_matchup_for_team(schedule,lastdate+1,team)):
         lastdate = lastdate+1
-    print(team+':  Need to fix something between '+format_date(firstdate) +' and '+format_date(lastdate))
+    print(team+':  Need to home/away swap a series between '+format_date(firstdate) +' and '+format_date(lastdate))
     d=firstdate
     while d <= lastdate:
         m = get_matchup_for_team(schedule,d,team)
@@ -477,9 +508,10 @@ def fix_long_homestand(schedule,team,firsthomegame,lasthomegame):
                 d=d+1
                 nextm = get_matchup_for_team(schedule,d+1,team)
             print(str(d-start+1)+' game series between '+str(m)+' from '+format_date(start)+' to '+format_date(d))
+            find_home_away_swap(schedule,m,start,d-start+1,fixupdays)
         d=d+1
                 
-def fix_long_homestands(schedule):
+def fix_long_homestands(schedule,fixupdays):
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
         homestand=0
@@ -495,7 +527,7 @@ def fix_long_homestands(schedule):
                 if homestand > maxhomestand:
                     print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
                           format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
-                    fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame)
+                    fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame,fixupdays)
                 homestand=0
     if homestand > maxhomestand:
         print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
@@ -806,7 +838,7 @@ def create_schedule(allseriesdates,allseries):
         iters=iters+1
         continue
     print_schedule(schedule)
-    fix_long_homestands(schedule)
+    fix_long_homestands(schedule,offdayfixuplist)
     return True
     if not check_schedule(schedule):
         print('Issues found with schedule - see error messages')
