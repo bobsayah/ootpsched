@@ -12,6 +12,7 @@ teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
           'Western' : ['STL', 'COL', 'DAL', 'LA', 'KC', 'SF'],
         }
 maxdayswithoutoffday = 21
+maxhomestand = 14
 
 seriesdates = namedtuple('seriesdates', 'startdate, length, datetype, serieslist')
 series = namedtuple('series', 'seriestype homediv awaydiv numgames seriesnum reversed')
@@ -426,8 +427,83 @@ def check_for_offdays(schedule):
                 streak=0
     return all_okay
 
+def check_for_long_homestands_and_roadtrips(schedule):
+    maxroadtrip = 12
+    all_okay =  True
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        homestand=0
+        roadtrip=0
+        for d in range(0,len(schedule)):
+            home_teams = [ game[0] for game in schedule[d]]
+            away_teams = [ game[1] for game in schedule[d]]
+            if thisteam in home_teams:
+                if roadtrip > maxroadtrip:
+                    print(thisteam+' has a '+str(roadtrip)+' game road trip ending on '+format_date(d))
+                    all_okay = False
+                roadtrip = 0
+                homestand = homestand+1
+            elif thisteam in away_teams:
+                if homestand > maxhomestand:
+                    print(thisteam+' has a '+str(homestand)+' game homestand ending on '+format_date(d))
+                    all_okay = False
+                homestand=0
+                roadtrip = roadtrip +1
+        if roadtrip > maxroadtrip:
+            print(thisteam+' ends season with a '+str(roadtrip)+' game road trip.')
+            all_okay = False
+        elif homestand > maxhomestand:
+            print(thisteam+' ends season with a '+str(homestand)+' game home stand.')
+            all_okay = False
+    return all_okay
+
+def fix_long_homestand(schedule,team,firsthomegame,lasthomegame):
+    firstdate=lasthomegame-maxhomestand
+    lastdate=firsthomegame+maxhomestand
+    while(get_matchup_for_team(schedule,firstdate,team) == get_matchup_for_team(schedule,firstdate-1,team)):
+        firstdate = firstdate-1
+    while(get_matchup_for_team(schedule,lastdate,team) == get_matchup_for_team(schedule,lastdate+1,team)):
+        lastdate = lastdate+1
+    print(team+':  Need to fix something between '+format_date(firstdate) +' and '+format_date(lastdate))
+    d=firstdate
+    while d <= lastdate:
+        m = get_matchup_for_team(schedule,d,team)
+        if m == None:
+            print(format_date(d)+' is an off day for '+team)
+        else:
+            start = d
+            nextm = get_matchup_for_team(schedule,d+1,team)
+            while m == nextm:
+                d=d+1
+                nextm = get_matchup_for_team(schedule,d+1,team)
+            print(str(d-start+1)+' game series between '+str(m)+' from '+format_date(start)+' to '+format_date(d))
+        d=d+1
+                
+def fix_long_homestands(schedule):
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        homestand=0
+        for d in range(0,len(schedule)):
+            home_teams = [ game[0] for game in schedule[d]]
+            away_teams = [ game[1] for game in schedule[d]]
+            if thisteam in home_teams:
+                if (homestand == 0):
+                    firstgameofhomestand=d
+                homestand = homestand+1
+                lasthomegame = d
+            elif thisteam in away_teams:
+                if homestand > maxhomestand:
+                    print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
+                          format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
+                    fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame)
+                homestand=0
+    if homestand > maxhomestand:
+        print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
+                format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
+        fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame)
+                
 def check_schedule(schedule):
-    all_okay = check_for_offdays(schedule)
+    all_okay = check_for_offdays(schedule) and check_for_long_homestands_and_roadtrips(schedule)
     for d in range(0,len(schedule)):
         if schedule[d] == []:
             print('No games scheduled for '+format_date(d))
@@ -730,6 +806,8 @@ def create_schedule(allseriesdates,allseries):
         iters=iters+1
         continue
     print_schedule(schedule)
+    fix_long_homestands(schedule)
+    return True
     if not check_schedule(schedule):
         print('Issues found with schedule - see error messages')
         return False
