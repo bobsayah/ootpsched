@@ -468,7 +468,6 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
             matchup_length=matchup_length+1
         if matchup_length > 0:
             if (matchup_length == series_length):
-                #homeawayswap = namedtuple('homeawayswap','matchup fromdate length todate revfromdate revlength revtodate')
                 print('Found series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
                 swap = homeawayswap(matchup,series_start_date,matchup_length,d-matchup_length,d-matchup_length,matchup_length,series_start_date)
                 swaplist.append(swap)
@@ -527,8 +526,6 @@ def fix_long_homestand(schedule,team,firsthomegame,lasthomegame,fixupdays):
         print('Swapping '+str(chosenswap.matchup))
         print('... '+str(chosenswap.length)+' games from '+format_date(chosenswap.fromdate)+' to '+format_date(chosenswap.todate))
         print('... '+str(chosenswap.revlength)+' games from '+format_date(chosenswap.revfromdate)+' to '+format_date(chosenswap.revtodate))
-        #homeawayswap = namedtuple('homeawayswap','matchup fromdate length todate revfromdate revlength revtodate')
-        print(chosenswap)
         for i in range(0,chosenswap.length):
             print(format_date(chosenswap.fromdate+i))
             schedule[chosenswap.fromdate+i].remove(chosenswap.matchup)
@@ -540,7 +537,6 @@ def fix_long_homestand(schedule,team,firsthomegame,lasthomegame,fixupdays):
             schedule[chosenswap.revfromdate+i].remove(reversedmatchup)
             print(format_date(chosenswap.revtodate+i))
             schedule[chosenswap.revtodate+i].append(reversedmatchup)
-        print_schedule(schedule)
         return True
     return False
                 
@@ -560,12 +556,15 @@ def fix_long_homestands(schedule,fixupdays):
                 if homestand > maxhomestand:
                     print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
                           format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
-                    fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame,fixupdays)
+                    if fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame,fixupdays):
+                        return True
                 homestand=0
         if homestand > maxhomestand:
             print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
                 format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
-            fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame)
+            if fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame):
+                return True
+    return False
                 
 def check_schedule(schedule):
     all_okay = check_for_offdays(schedule) and check_for_long_homestands_and_roadtrips(schedule)
@@ -857,22 +856,23 @@ def create_schedule(allseriesdates,allseries):
         return False
 
     schedule = assigngamestodates(allseriesdates)
-    try:
-        fix_consecutive_offdays(schedule)
-    except:
-        print('Failure during fix_consecutive_offdays')
-        return False
-    offdayfixuplist = create_offday_fixup_list(schedule)
-    fill_open_dates(schedule,offdayfixuplist)
 
     iters=0
-    while find_and_fix_long_streak(schedule,offdayfixuplist) and iters < 10:
+    while iters < 20:
+        try:
+            fix_consecutive_offdays(schedule)
+        except:
+            print('Failure during fix_consecutive_offdays')
+            return False
         offdayfixuplist = create_offday_fixup_list(schedule)
-        iters=iters+1
-        continue
-    print_schedule(schedule)
-    fix_long_homestands(schedule,offdayfixuplist)
-    return True
+        fill_open_dates(schedule,offdayfixuplist)
+        offdayfixuplist = create_offday_fixup_list(schedule)
+        if find_and_fix_long_streak(schedule,offdayfixuplist):
+            continue
+        offdayfixuplist = create_offday_fixup_list(schedule)
+        if not fix_long_homestands(schedule,offdayfixuplist):
+            break
+        
     if not check_schedule(schedule):
         print('Issues found with schedule - see error messages')
         return False
