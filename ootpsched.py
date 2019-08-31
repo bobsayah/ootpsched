@@ -13,6 +13,7 @@ teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
         }
 maxdayswithoutoffday = 21
 maxhomestand = 14
+maxroadtrip = 14
 
 seriesdates = namedtuple('seriesdates', 'startdate, length, datetype, serieslist')
 series = namedtuple('series', 'seriestype homediv awaydiv numgames seriesnum reversed')
@@ -428,7 +429,6 @@ def check_for_offdays(schedule):
     return all_okay
 
 def check_for_long_homestands_and_roadtrips(schedule):
-    maxroadtrip = 12
     all_okay =  True
     allteams = [ team for div in teams for team in teams[div]]
     for thisteam in allteams:
@@ -497,9 +497,9 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
         d = d+1
     return swaplist
 
-def fix_long_homestand(schedule,team,firsthomegame,lasthomegame,fixupdays):
-    firstdate=lasthomegame-maxhomestand
-    lastdate=firsthomegame+maxhomestand
+def fix_long_streak(schedule,team,firstgame,lastgame,fixupdays):
+    firstdate=lastgame-maxhomestand
+    lastdate=firstgame+maxhomestand
     swaps = []
     while(get_matchup_for_team(schedule,firstdate,team) == get_matchup_for_team(schedule,firstdate-1,team)):
         firstdate = firstdate-1
@@ -556,13 +556,39 @@ def fix_long_homestands(schedule,fixupdays):
                 if homestand > maxhomestand:
                     print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
                           format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
-                    if fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame,fixupdays):
+                    if fix_long_streak(schedule,thisteam,firstgameofhomestand,lasthomegame,fixupdays):
                         return True
                 homestand=0
         if homestand > maxhomestand:
             print(thisteam+' has a '+str(homestand)+' game homestand starting on '+
                 format_date(firstgameofhomestand)+' and ending on '+format_date(lasthomegame))
-            if fix_long_homestand(schedule,thisteam,firstgameofhomestand,lasthomegame):
+            if fix_long_streak(schedule,thisteam,firstgameofhomestand,lasthomegame,fixupdays):
+                return True
+    return False
+
+def fix_long_roadtrips(schedule,fixupdays):
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        roadtriplen=0
+        for d in range(0,len(schedule)):
+            home_teams = [ game[0] for game in schedule[d]]
+            away_teams = [ game[1] for game in schedule[d]]
+            if thisteam in away_teams:
+                if (roadtriplen == 0):
+                    firstgameofroadtrip=d
+                roadtriplen = roadtriplen+1
+                lastgameoftrip = d
+            elif thisteam in home_teams:
+                if roadtriplen > maxroadtrip:
+                    print(thisteam+' has a '+str(roadtriplen)+' game road trip starting on '+
+                          format_date(firstgameofroadtrip)+' and ending on '+format_date(lastgameoftrip))
+                    if fix_long_streak(schedule,thisteam,firstgameofroadtrip,lastgameoftrip,fixupdays):
+                        return True
+                roadtriplen=0
+        if roadtriplen > maxroadtrip:
+            print(thisteam+' has a '+str(roadtriplen)+' game road trip starting on '+
+                    format_date(firstgameofroadtrip)+' and ending on '+format_date(lastgameoftrip))
+            if fix_long_streak(schedule,thisteam,firstgameofroadtrip,lastgameoftrip,fixupdays):
                 return True
     return False
                 
@@ -858,7 +884,8 @@ def create_schedule(allseriesdates,allseries):
     schedule = assigngamestodates(allseriesdates)
 
     iters=0
-    while iters < 20:
+    while iters < 40:
+        iters=iters+1
         try:
             fix_consecutive_offdays(schedule)
         except:
@@ -870,7 +897,9 @@ def create_schedule(allseriesdates,allseries):
         if find_and_fix_long_streak(schedule,offdayfixuplist):
             continue
         offdayfixuplist = create_offday_fixup_list(schedule)
-        if not fix_long_homestands(schedule,offdayfixuplist):
+        if fix_long_homestands(schedule,offdayfixuplist):
+            continue
+        if not fix_long_roadtrips(schedule,offdayfixuplist):
             break
         
     if not check_schedule(schedule):
