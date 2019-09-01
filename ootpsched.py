@@ -639,6 +639,10 @@ def check_schedule(schedule):
             print('Issue with teams playing on '+format_date(d))
             print(allteamsplayingtoday)
             all_okay = False
+    if get_matchup_for_team(schedule,0,'CIN')[0] != 'CIN':
+        print('CIN not home on opening day')
+        all_okay = False
+            
     return all_okay
 
 def create_offday_fixup_list(schedule):
