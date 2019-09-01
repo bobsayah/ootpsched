@@ -461,7 +461,6 @@ def check_for_long_homestands_and_roadtrips(schedule):
 
 def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupdays):
     fixlist = []
-    print('=====find_home_away_swap=====')
     d = 0
     possible4to2swap = None
     while d < len(schedule):
@@ -471,54 +470,48 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
             matchup_length=matchup_length+1
         if matchup_length > 0:
             if (matchup_length == series_length):
-                print('Found series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                #print('Found series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
                 swap = homeawayswap(matchup,[],[])
                 for i in range(0,series_length):
                     swap.swaplist.append((series_start_date+i, d-matchup_length+i)) 
                 fixlist.append(swap)
             elif matchup_length == 4 and series_length == 3:
-                print('Possible series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                #print('Possible series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
                 date_before = series_start_date-1
                 if (matchup[0] in fixupdays[date_before] and
                     matchup[1] in fixupdays[date_before] and
                     get_day_of_week(date_before) in ['Mon', 'Thu']):
-                    print('Can swap(before) '+str(matchup_length)+' days from '+format_date(date_before)+' until '+format_date(date_before+matchup_length-1))
-                    print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
+                    #print('Can swap(before) '+str(matchup_length)+' days from '+format_date(date_before)+' until '+format_date(date_before+matchup_length-1))
+                    #print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
                         swap.swaplist.append((d-matchup_length+1+i, series_start_date+i))
                     swap.movelist.append((d-matchup_length,date_before))
                     fixlist.append(swap)
-                else:
-                    print('Nope - not available to extend before')
                 date_after = series_start_date+series_length
                 if (matchup[0] in fixupdays[date_after] and
                     matchup[1] in fixupdays[date_after] and
                     get_day_of_week(date_after) in ['Thu', 'Mon']):
-                    print('Can swap(after) '+str(matchup_length)+' days from '+format_date(series_start_date)+' until '+format_date(date_after))
-                    print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
+                    #print('Can swap(after) '+str(matchup_length)+' days from '+format_date(series_start_date)+' until '+format_date(date_after))
+                    #print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
                         swap.swaplist.append((d-series_length+i, series_start_date+i))
                     swap.movelist.append((d-matchup_length,series_start_date+matchup_length-1))
                     fixlist.append(swap)
-                else:
-                    print('Nope - not available to extend after')
             elif series_length == 4 and matchup_length == 2:
                 if possible4to2swap == None:
-                    print('Found first 2 game series to possibly home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                    #print('Found first 2 game series to possibly home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
                     possible4to2swap = homeawayswap(matchup,[],[])
                     for i in range(0,matchup_length):
                         possible4to2swap.swaplist.append((series_start_date+i, d-matchup_length+i))
                 else:
-                    print('Found second 2 game series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                    #print('Found second 2 game series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
                     for i in range(2,series_length):
                         possible4to2swap.swaplist.append((series_start_date+i, d-series_length+i))
                     fixlist.append(possible4to2swap)
                     possible4to2swap = None
         d = d+1
-    print('fixlist')
-    print(fixlist)
     return fixlist
 
 def fix_long_streak(schedule,team,firstgame,lastgame,fixupdays):
@@ -533,19 +526,15 @@ def fix_long_streak(schedule,team,firstgame,lastgame,fixupdays):
     d=firstdate
     while d <= lastdate:
         m = get_matchup_for_team(schedule,d,team)
-        if m == None:
-            print(format_date(d)+' is an off day for '+team)
-        else:
+        if m != None:
             start = d
             nextm = get_matchup_for_team(schedule,d+1,team)
             while m == nextm:
                 d=d+1
                 nextm = get_matchup_for_team(schedule,d+1,team)
-            print(str(d-start+1)+' game series between '+str(m)+' from '+format_date(start)+' to '+format_date(d))
+            #print(str(d-start+1)+' game series between '+str(m)+' from '+format_date(start)+' to '+format_date(d))
             swaps = swaps + find_home_away_swap(schedule,m,start,d-start+1,fixupdays)
         d=d+1
-    print('swaps')
-    print(swaps)
     if len(swaps):
         chosenswap = random.choice(swaps)
         print(chosenswap)
