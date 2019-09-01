@@ -1012,7 +1012,7 @@ def create_schedule(allseriesdates,allseries):
     write_schedule(schedule)
     return True      
 
-random.seed(2)
+random.seed(3)
 iters=0
 while iters < 10:
     allseriesdates = initializeseriesdates()
