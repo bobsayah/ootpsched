@@ -38,8 +38,9 @@ def get_day_of_week(d):
     thisdate=openingday(year)+timedelta(d)
     return thisdate.strftime('%a')
     
-def isaholiday(mydate):
+def isaholiday(d):
 
+    mydate = openingday()+timedelta(d)
     memorialday=calendar.Calendar().monthdatescalendar(year,5)[-1][0]
     fourthofjuly=date(year,7,4)
     laborday=calendar.Calendar().monthdatescalendar(year,9)[1][0]
@@ -50,7 +51,7 @@ def isaholiday(mydate):
         return 1
     elif mydate == laborday:
         return 1
-    elif mydate == openingday(mydate.year):
+    elif mydate == openingday():
         return 1
     else:
         return 0
@@ -58,26 +59,26 @@ def isaholiday(mydate):
 def initializeseriesdates():
 
     dates=[]
-    currentdate=openingday(year)
-    dates.append(seriesdates(currentdate,3,'holiday',[]))
-    currentdate=currentdate+timedelta(3)
+    d=0
+    dates.append(seriesdates(d,3,'holiday',[]))
+    d=3
 
     for w in range(0,24):
-        if currentdate.weekday() == 1:
-            dates.append(seriesdates(currentdate,3,'weekday',[]))
-            currentdate=currentdate+timedelta(3)
-            dates.append(seriesdates(currentdate,3,'weekend',[]))
-            currentdate=currentdate+timedelta(3)
-        elif isaholiday(currentdate+timedelta(7)):
-            dates.append(seriesdates(currentdate,4,'weekday',[]))
-            currentdate=currentdate+timedelta(4)
-            dates.append(seriesdates(currentdate,4,'holiday',[]))
-            currentdate=currentdate+timedelta(4)
+        if get_day_of_week(d) == 'Tue':
+            dates.append(seriesdates(d,3,'weekday',[]))
+            d=d+3
+            dates.append(seriesdates(d,3,'weekend',[]))
+            d=d+3
+        elif isaholiday(d+7):
+            dates.append(seriesdates(d,4,'weekday',[]))
+            d=d+4
+            dates.append(seriesdates(d,4,'holiday',[]))
+            d=d+4
         else:
-            dates.append(seriesdates(currentdate,3,'weekday',[]))
-            currentdate=currentdate+timedelta(3)
-            dates.append(seriesdates(currentdate,4,'weekend',[]))
-            currentdate=currentdate+timedelta(4)
+            dates.append(seriesdates(d,3,'weekday',[]))
+            d=d+3
+            dates.append(seriesdates(d,4,'weekend',[]))
+            d=d+4
     return dates
 
 def initializematchups():
@@ -186,7 +187,7 @@ def assigndivdiv(dates,series):
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
             d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
-        elif d.length == 3 and d.startdate.strftime('%a') == 'Mon':
+        elif d.length == 3 and get_day_of_week(d.startdate) == 'Mon':
             blackout = search_for_blackout_div(dates,r)
             #print('Blackout division for '+str(d)+' is '+blackout)
             try:
@@ -271,7 +272,7 @@ def swap_series(allseriesdates,replacementdate,replacementseries):
     random.shuffle(randlist)
     for r in randlist:
         seriesdate = allseriesdates[r]
-        if abs(seriesdate.startdate-replacementdate.startdate).days < 10:
+        if abs(seriesdate.startdate-replacementdate.startdate) < 10:
             continue
         if seriesdate.datetype != replacementdate.datetype:
             continue
@@ -282,7 +283,7 @@ def swap_series(allseriesdates,replacementdate,replacementseries):
                  i.seriestype == replacementseries.seriestype and
                  seriesdate.length >= replacementseries.numgames and
                  replacementdate.length >= i.numgames):
-                print("replacement series:"+str(seriesdate.startdate)+':'+str(replacementseries))
+                print("replacement series: "+format_date(seriesdate.startdate)+':'+str(replacementseries))
                 seriesdate.serieslist.remove(i)
                 replacementdate.serieslist.remove(replacementseries)
                 seriesdate.serieslist.append(replacementseries)
@@ -304,7 +305,7 @@ def rearrange_series(allseriesdates):
                 if ( i.seriestype == j.seriestype and
                      ((i.homediv == j.homediv and i.awaydiv == j.awaydiv) or (i.homediv == j.awaydiv and i.awaydiv == j.homediv)) and
                      i.seriesnum == j.seriesnum):
-                    print('Two consecutive series between same sets of teams:'+str(earlier.startdate)+':'+str(later.startdate))
+                    print('Two consecutive series between same sets of teams:'+format_date(earlier.startdate)+':'+format_date(later.startdate))
                     print(earlier)
                     print(later)
                     # Can't easily swap holiday series, so choose the non-holiday one
@@ -329,7 +330,7 @@ def print_schedule(schedule):
 
 def print_series_dates(dates):
     for s in dates:
-        print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+        print(format_date(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
 
         
 def assigngamestodates(allseriesdates):
@@ -338,12 +339,11 @@ def assigngamestodates(allseriesdates):
         seasonlength=seasonlength+d.length
     print('Season is '+str(seasonlength)+' days long.')
     openingday=allseriesdates[0].startdate
-    print('Opening day is '+str(openingday))
-    print('Last day of season is '+str(openingday+timedelta(seasonlength-1)))
+    print('Opening day is '+format_date(openingday))
+    print('Last day of season is '+format_date(openingday+seasonlength-1))
     gamedays = [ [] for d in range(0,seasonlength) ]
     for d in allseriesdates:
-        day = d.startdate
-        i = (day - openingday).days
+        i = d.startdate
         for s in d.serieslist:
             for m in matchups[s.seriestype][s.seriesnum]:
                 if s.reversed:
@@ -370,7 +370,7 @@ def check_for_consecutive_series(allseriesdates):
     x = dict()
     prev = None
     for d in allseriesdates:
-        day = str(d.startdate)
+        day = d.startdate
         x[day] = []
         for s in d.serieslist:
             for m in matchups[s.seriestype][s.seriesnum]:
@@ -481,8 +481,8 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                 if (matchup[0] in fixupdays[date_before] and
                     matchup[1] in fixupdays[date_before] and
                     get_day_of_week(date_before) in ['Mon', 'Thu']):
-                    #print('Can swap(before) '+str(matchup_length)+' days from '+format_date(date_before)+' until '+format_date(date_before+matchup_length-1))
-                    #print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
+                    print('Can swap(before) '+str(matchup_length)+' days from '+format_date(date_before)+' until '+format_date(date_before+matchup_length-1))
+                    print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
                         swap.swaplist.append((d-matchup_length+1+i, series_start_date+i))
@@ -491,9 +491,9 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                 date_after = series_start_date+series_length
                 if (matchup[0] in fixupdays[date_after] and
                     matchup[1] in fixupdays[date_after] and
-                    get_day_of_week(date_after) in ['Thu', 'Mon']):
-                    #print('Can swap(after) '+str(matchup_length)+' days from '+format_date(series_start_date)+' until '+format_date(date_after))
-                    #print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
+                    get_day_of_week(date_after) in ['Thu', 'Mon'] ):
+                    print('Can swap(after) '+str(matchup_length)+' days from '+format_date(series_start_date)+' until '+format_date(date_after))
+                    print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
                         swap.swaplist.append((d-series_length+i, series_start_date+i))
@@ -620,7 +620,7 @@ def check_schedule(schedule):
             if get_day_of_week(d) in ['Fri', 'Sat', 'Sun']:
                 print('Some teams are not scheduled to play on '+format_date(d))
                 all_okay=False
-            elif isaholiday(openingday()+timedelta(d)):
+            elif isaholiday(d):
                 print('Some teams are not scheduled to play on '+format_date(d)+ 'which is a holiday.')
                 all_okay=False
         setofteamsplayingtoday = set(allteamsplayingtoday)       
@@ -778,7 +778,7 @@ def find_and_fix_long_streak(schedule,fixupdays):
                     for i in range(firstd,lastd):
                         dayofweek=get_day_of_week(i)
                         if dayofweek in ['Mon', 'Wed', 'Thu']:
-                            if isaholiday(openingday()+timedelta(i)):
+                            if isaholiday(i):
                                 print(format_date(i)+' is a holiday')
                                 continue
                             m = get_matchup_for_team(schedule,i,thisteam)
@@ -798,6 +798,7 @@ def find_and_fix_long_streak(schedule,fixupdays):
 def ensure_CIN_starts_at_home(schedule,fixupdays):
     m = get_matchup_for_team(schedule,0,'CIN')
     if m[0] != 'CIN':
+        print('Swapping opening series for CIN to ensure they start at home')
         swaps = find_home_away_swap(schedule,m,0,3,fixupdays)
         if len(swaps) != 1:
             raise
@@ -903,7 +904,7 @@ def fix_consecutive_offdays(schedule):
 
 def compute_game_time(schedule,d,hometeam,awayteam,teamdata):
 
-    if get_day_of_week(d) in ['Sat', 'Sun'] or isaholiday(openingday()+timedelta(d)):
+    if get_day_of_week(d) in ['Sat', 'Sun'] or isaholiday(d):
         gametime = int(teamdata[hometeam]['day_start'])
     else:
         gametime = int(teamdata[hometeam]['night_start'])
@@ -974,7 +975,7 @@ def create_schedule(allseriesdates,allseries):
         return False
 
     for s in allseriesdates:
-        print(str(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
+        print(format_date(s.startdate)+':('+str(s.length)+'):'+str(s.serieslist))
 
     if check_series_length(allseriesdates):
         print_series_dates(allseriesdates)
@@ -986,7 +987,7 @@ def create_schedule(allseriesdates,allseries):
     ensure_CIN_starts_at_home(schedule,offdayfixuplist)
 
     iters=0
-    while iters < 40:
+    while iters < 100:
         iters=iters+1
         try:
             fix_consecutive_offdays(schedule)
@@ -1010,7 +1011,7 @@ def create_schedule(allseriesdates,allseries):
     write_schedule(schedule)
     return True
 
-random.seed(7)
+random.seed(1)
 allseriesdates = initializeseriesdates()
 matchups = initializematchups()
 allseries = initializeseries()
