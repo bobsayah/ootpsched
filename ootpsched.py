@@ -462,6 +462,7 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
     fixlist = []
     print('=====find_home_away_swap=====')
     d = 0
+    possible4to2swap = None
     while d < len(schedule):
         matchup_length = 0
         while d < len(schedule) and schedule_contains_matchup(schedule,d,matchup[1],matchup[0]):
@@ -485,7 +486,7 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
                         swap.swaplist.append((d-matchup_length+i, series_start_date+i))
-                    swap.movelist.append(d-1,date_before)
+                    swap.movelist.append((d-1,date_before))
                     fixlist.append(swap)
                 else:
                     print('Nope - not available to extend before')
@@ -502,7 +503,18 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                     fixlist.append(swap)
                 else:
                     print('Nope - not available to extend after')
-                    
+            elif series_length == 4 and matchup_length == 2:
+                if possible4to2swap == None:
+                    print('Found first 2 game series to possibly home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                    possible4to2swap = homeawayswap(matchup,[],[])
+                    for i in range(0,matchup_length):
+                        possible4to2swap.swaplist.append((series_start_date+i, d-matchup_length+i))
+                else:
+                    print('Found second 2 game series to home/away swap with from '+format_date(d-matchup_length)+' to '+format_date(d-1))
+                    for i in range(2,series_length):
+                        possible4to2swap.swaplist.append((series_start_date+i, d-series_length+i))
+                    fixlist.append(possible4to2swap)
+                    possible4to2swap = None
         d = d+1
     print('fixlist')
     print(fixlist)
