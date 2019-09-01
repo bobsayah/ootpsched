@@ -806,6 +806,24 @@ def find_and_fix_long_streak(schedule,fixupdays):
                 streak=0
     return False
 
+def ensure_CIN_starts_at_home(schedule,fixupdays):
+    m = get_matchup_for_team(schedule,0,'CIN')
+    if m[0] != 'CIN':
+        swaps = find_home_away_swap(schedule,m,0,3,fixupdays)
+        if len(swaps) != 1:
+            raise
+        swap = swaps[0]
+        if len(swap.swaplist) != 3 or len(swap.movelist) != 0:
+            raise
+        print('Swapping '+str(swap.matchup))
+        reversedmatchup = ( swap.matchup[1], swap.matchup[0] )
+        for i in range(0,len(swap.swaplist)):
+            print('Swapping '+format_date(swap.swaplist[i][0])+' and '+format_date(swap.swaplist[i][1]))
+            schedule[swap.swaplist[i][0]].remove(swap.matchup)
+            schedule[swap.swaplist[i][1]].append(swap.matchup)
+            schedule[swap.swaplist[i][1]].remove(reversedmatchup)
+            schedule[swap.swaplist[i][0]].append(reversedmatchup)
+
 def fill_open_dates(schedule,fixupdays):
     for d in range(0,len(schedule)):
         if schedule[d] == []:
@@ -974,6 +992,9 @@ def create_schedule(allseriesdates,allseries):
         return False
 
     schedule = assigngamestodates(allseriesdates)
+    
+    offdayfixuplist = create_offday_fixup_list(schedule)
+    ensure_CIN_starts_at_home(schedule,offdayfixuplist)
 
     iters=0
     while iters < 40:
