@@ -854,7 +854,7 @@ def fill_open_dates(schedule,fixupdays):
                     schedule[d-4].remove(m)
                     continue
                 print('Unable to find a way to fill open day on '+format_date(d))
-                raise
+                return False
             else:
                 print('Need logic to implement fill_open_dates on '+get_day_of_week(d))
                 raise                
@@ -987,7 +987,7 @@ def create_schedule(allseriesdates,allseries):
     
     offdayfixuplist = create_offday_fixup_list(schedule)
     ensure_CIN_starts_at_home(schedule,offdayfixuplist)
-
+    
     iters=0
     while iters < 200:
         iters=iters+1
@@ -1006,18 +1006,22 @@ def create_schedule(allseriesdates,allseries):
             continue
         if not fix_long_roadtrips(schedule,offdayfixuplist):
             break
-    print_schedule(schedule)
     if not check_schedule(schedule):
-        print('Issues found with schedule - see error messages')
         return False
+    print_schedule(schedule)
     write_schedule(schedule)
-    return True
+    return True      
 
-random.seed(1)
-allseriesdates = initializeseriesdates()
-matchups = initializematchups()
-allseries = initializeseries()
-if not create_schedule(allseriesdates,allseries):
-    print('Schedule creation failed.  See above messages for details.')
+random.seed(2)
+iters=0
+while iters < 10:
+    allseriesdates = initializeseriesdates()
+    matchups = initializematchups()
+    allseries = initializeseries()
+    if not create_schedule(allseriesdates,allseries):
+        print('Schedule creation failed.  See above messages for details.  Will try to generate another schedule')
+    else:
+        break
+    iters = iters+1
 
 
