@@ -13,7 +13,7 @@ teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
         }
 maxdayswithoutoffday = 21
 maxhomestand = 15
-maxroadtrip = 15
+maxroadtrip = 14
 
 seriesdates = namedtuple('seriesdates', 'startdate, length, datetype, serieslist')
 series = namedtuple('series', 'seriestype homediv awaydiv numgames seriesnum reversed')
@@ -485,8 +485,8 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                     print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
-                        swap.swaplist.append((d-matchup_length+i, series_start_date+i))
-                    swap.movelist.append((d-1,date_before))
+                        swap.swaplist.append((d-matchup_length+1+i, series_start_date+i))
+                    swap.movelist.append((d-matchup_length,date_before))
                     fixlist.append(swap)
                 else:
                     print('Nope - not available to extend before')
@@ -499,7 +499,7 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
                     for i in range(0,series_length):
                         swap.swaplist.append((d-series_length+i, series_start_date+i))
-                    swap.movelist.append((d-matchup_length,series_start_date+matchup_length))
+                    swap.movelist.append((d-matchup_length,series_start_date+matchup_length-1))
                     fixlist.append(swap)
                 else:
                     print('Nope - not available to extend after')
@@ -624,6 +624,19 @@ def check_schedule(schedule):
     for d in range(0,len(schedule)):
         if schedule[d] == []:
             print('No games scheduled for '+format_date(d))
+            all_okay = False
+        allteamsplayingtoday = [ team for game in schedule[d] for team in game]        
+        if len(allteamsplayingtoday) < 18:
+            if get_day_of_week(d) in ['Fri', 'Sat', 'Sun']:
+                print('Some teams are not scheduled to play on '+format_date(d))
+                all_okay=False
+            elif isaholiday(openingday()+timedelta(d)):
+                print('Some teams are not scheduled to play on '+format_date(d)+ 'which is a holiday.')
+                all_okay=False
+        setofteamsplayingtoday = set(allteamsplayingtoday)       
+        if (len(allteamsplayingtoday) != len(setofteamsplayingtoday)):
+            print('Issue with teams playing on '+format_date(d))
+            print(allteamsplayingtoday)
             all_okay = False
     return all_okay
 
