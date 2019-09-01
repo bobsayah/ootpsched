@@ -480,7 +480,8 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                 date_before = series_start_date-1
                 if (matchup[0] in fixupdays[date_before] and
                     matchup[1] in fixupdays[date_before] and
-                    get_day_of_week(date_before) in ['Mon', 'Thu']):
+                    get_day_of_week(date_before) in ['Mon', 'Thu'] and
+                    get_day_of_week(d-matchup_length) in ['Mon', 'Thu']):
                     print('Can swap(before) '+str(matchup_length)+' days from '+format_date(date_before)+' until '+format_date(date_before+matchup_length-1))
                     print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
@@ -491,7 +492,8 @@ def find_home_away_swap(schedule,matchup,series_start_date,series_length,fixupda
                 date_after = series_start_date+series_length
                 if (matchup[0] in fixupdays[date_after] and
                     matchup[1] in fixupdays[date_after] and
-                    get_day_of_week(date_after) in ['Thu', 'Mon'] ):
+                    get_day_of_week(date_after) in ['Thu', 'Mon'] and
+                    get_day_of_week(d-matchup_length) in ['Mon', 'Thu']):
                     print('Can swap(after) '+str(matchup_length)+' days from '+format_date(series_start_date)+' until '+format_date(date_after))
                     print('    with '+format_date(d-matchup_length)+' until '+format_date(d-1))
                     swap = homeawayswap((matchup[1], matchup[0]),[],[])
@@ -987,7 +989,7 @@ def create_schedule(allseriesdates,allseries):
     ensure_CIN_starts_at_home(schedule,offdayfixuplist)
 
     iters=0
-    while iters < 100:
+    while iters < 200:
         iters=iters+1
         try:
             fix_consecutive_offdays(schedule)
