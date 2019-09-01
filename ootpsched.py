@@ -4,6 +4,7 @@ from datetime import timedelta
 from collections import namedtuple
 import calendar
 import random
+import csv
 
 year=1961
 mlbdivisions = ['American', 'National', 'Western']
@@ -758,6 +759,8 @@ def shift_two_game_series_to_make_room(schedule,date_to_free_up,matchup,fixupday
     return False
 
 def get_matchup_for_team(schedule,d,thisteam):
+    if d >= len(schedule):
+        return None
     for t in schedule[d]:
         if t[0] == thisteam or t[1] == thisteam:
             return t
@@ -887,6 +890,51 @@ def fix_consecutive_offdays(schedule):
                     raise
     return
 
+def compute_game_time(schedule,d,hometeam,awayteam,teamdata):
+
+    if get_day_of_week(d) in ['Sat', 'Sun'] or isaholiday(openingday()+timedelta(d)):
+        gametime = int(teamdata[hometeam]['day_start'])
+    else:
+        gametime = int(teamdata[hometeam]['night_start'])
+    max_distance_to_travel = 0
+    hometeamtomorrow = get_matchup_for_team(schedule,d+1,hometeam)
+    if hometeamtomorrow != None:
+        dist_to_travel=int(teamdata[hometeam][hometeamtomorrow[0]])
+        max_distance_to_travel=max(max_distance_to_travel,dist_to_travel)
+    awayteamtomorrow = get_matchup_for_team(schedule,d+1,awayteam)
+    if awayteamtomorrow != None:
+        dist_to_travel=int(teamdata[hometeam][awayteamtomorrow[0]])
+        max_distance_to_travel=max(max_distance_to_travel,dist_to_travel)
+    if max_distance_to_travel > 1000:
+        gametime = min(gametime,int(teamdata[hometeam]['getaway_start']))
+    gametime = gametime + int(teamdata[hometeam]['timezone'])*100
+    return gametime
+    
+
+def write_schedule(schedule):
+    teamdata = {}
+    with open('/Users/Dad/ootpsched/ootpsched.csv') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        for row in csvreader:
+            teamdata[row['team']] = row
+    type='ILN_BGN_G154_SL1_D3_T6_T6_T6_C_'+str(year)
+    outfilename='c:/Users/Dad/OOTPschedules/'+type+'.lsdl'
+    f=open(outfilename,'w')
+    print('<?xml version="1.0" encoding="ISO-8859-1"?>',file=f)
+    print('<SCHEDULE type="ILN_BGN_G154_SL1D3T6T6T6" inter_league="0" balanced_games="0" games_per_team="154" start_day_of_week="5">',file=f)
+    print('<GAMES>',file=f)
+    for d in range(0,len(schedule)):
+        for m in schedule[d]:
+            hometeam=m[0]
+            awayteam=m[1]
+            time=compute_game_time(schedule,d,hometeam,awayteam,teamdata)
+            hometeamnum=str(teamdata[hometeam]['teamnum'])
+            awayteamnum=str(teamdata[awayteam]['teamnum'])
+            print('<GAME day="'+str(d+1)+'" time="'+str(time)+'" away="'+awayteamnum+'" home="'+hometeamnum+'" />',file=f)
+    print('</GAMES>',file=f)
+    print('</SCHEDULE>',file=f)
+    f.close()
+
 def create_schedule(allseriesdates,allseries):
     assignholidayseries(allseriesdates,allseries)
     assigndivdiv(allseriesdates,allseries)
@@ -945,6 +993,7 @@ def create_schedule(allseriesdates,allseries):
     if not check_schedule(schedule):
         print('Issues found with schedule - see error messages')
         return False
+    write_schedule(schedule)
     return True
 
 random.seed(7)
@@ -953,4 +1002,5 @@ matchups = initializematchups()
 allseries = initializeseries()
 if not create_schedule(allseriesdates,allseries):
     print('Schedule creation failed.  See above messages for details.')
+
 
