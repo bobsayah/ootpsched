@@ -921,7 +921,7 @@ def write_schedule(schedule):
     outfilename='c:/Users/Dad/OOTPschedules/'+type+'.lsdl'
     f=open(outfilename,'w')
     print('<?xml version="1.0" encoding="ISO-8859-1"?>',file=f)
-    print('<SCHEDULE type="ILN_BGN_G154_SL1D3T6T6T6" inter_league="0" balanced_games="0" games_per_team="154" start_day_of_week="5">',file=f)
+    print('<SCHEDULE type="ILN_BGN_G154_SL1D3T6T6T6" inter_league="0" balanced_games="0" games_per_team="154" start_day_of_week="6">',file=f)
     print('<GAMES>',file=f)
     for d in range(0,len(schedule)):
         for m in schedule[d]:
