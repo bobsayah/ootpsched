@@ -784,6 +784,10 @@ def find_and_fix_long_streak(schedule,fixupdays):
                                 print(format_date(i)+' is a holiday')
                                 continue
                             m = get_matchup_for_team(schedule,i,thisteam)
+                            mbefore = get_matchup_for_team(schedule,i-1,thisteam)
+                            mafter = get_matchup_for_team(schedule,i+1,thisteam)
+                            if m == None or (m == mbefore and m == mafter):
+                                continue
                             print('Search for a swap date for '+str(m)+' on '+format_date(i))
                             if find_open_day_to_move_game_to(schedule,i,m,fixupdays):
                                 return True
