@@ -802,19 +802,22 @@ def ensure_CIN_starts_at_home(schedule,fixupdays):
     if m[0] != 'CIN':
         print('Swapping opening series for CIN to ensure they start at home')
         swaps = find_home_away_swap(schedule,m,0,3,fixupdays)
-        if len(swaps) != 1:
-            raise
-        swap = swaps[0]
-        if len(swap.swaplist) != 3 or len(swap.movelist) != 0:
-            raise
-        print('Swapping '+str(swap.matchup))
-        reversedmatchup = ( swap.matchup[1], swap.matchup[0] )
-        for i in range(0,len(swap.swaplist)):
-            print('Swapping '+format_date(swap.swaplist[i][0])+' and '+format_date(swap.swaplist[i][1]))
-            schedule[swap.swaplist[i][0]].remove(swap.matchup)
-            schedule[swap.swaplist[i][1]].append(swap.matchup)
-            schedule[swap.swaplist[i][1]].remove(reversedmatchup)
-            schedule[swap.swaplist[i][0]].append(reversedmatchup)
+        chosenswap = random.choice(swaps)
+        print(chosenswap)
+        print('Swapping '+str(chosenswap.matchup))
+        #print('... '+str(chosenswap.length)+' games from '+format_date(chosenswap.fromdate)+' to '+format_date(chosenswap.todate))
+        #print('... '+str(chosenswap.revlength)+' games from '+format_date(chosenswap.revfromdate)+' to '+format_date(chosenswap.revtodate))
+        reversedmatchup = ( chosenswap.matchup[1], chosenswap.matchup[0] )
+        for i in range(0,len(chosenswap.swaplist)):
+            print('Swapping '+format_date(chosenswap.swaplist[i][0])+' and '+format_date(chosenswap.swaplist[i][1]))
+            schedule[chosenswap.swaplist[i][0]].remove(chosenswap.matchup)
+            schedule[chosenswap.swaplist[i][1]].append(chosenswap.matchup)
+            schedule[chosenswap.swaplist[i][1]].remove(reversedmatchup)
+            schedule[chosenswap.swaplist[i][0]].append(reversedmatchup)
+        for i in range(0,len(chosenswap.movelist)):
+            print('Moving '+format_date(chosenswap.movelist[i][0])+' to '+format_date(chosenswap.movelist[i][1]))
+            schedule[chosenswap.movelist[i][0]].remove(chosenswap.matchup)
+            schedule[chosenswap.movelist[i][1]].append(chosenswap.matchup)
 
 def fill_open_dates(schedule,fixupdays):
     for d in range(0,len(schedule)):
