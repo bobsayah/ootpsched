@@ -862,6 +862,20 @@ def fill_open_dates(schedule,fixupdays):
                     continue
                 print('Unable to find a way to fill open day on '+format_date(d))
                 return False
+            elif get_day_of_week(d) == 'Thu':
+                m = get_matchup_for_team(schedule,d-1,thisteam)
+                otherteam = [t for t in m if t != thisteam][0]
+                if (otherteam in allteams and
+                    get_matchup_for_team(schedule,d-2,thisteam) == m and
+                    get_matchup_for_team(schedule,d-3,thisteam) == m and
+                    get_matchup_for_team(schedule,d-4,thisteam) != None and
+                    get_matchup_for_team(schedule,d-4,otherteam) != None):
+                    print('Moving '+str(m)+' on '+format_date(d-3)+' to '+format_date(d))
+                    schedule[d].append(m)
+                    schedule[d-3].remove(m)
+                    continue
+                print('Unable to find a way to fill open day on '+format_date(d))
+                return False
             else:
                 print('Need logic to implement fill_open_dates on '+get_day_of_week(d))
                 raise                
