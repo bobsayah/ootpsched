@@ -7,6 +7,7 @@ import random
 import csv
 
 year=1962
+random.seed(1)
 mlbdivisions = ['American', 'National', 'Western']
 teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
           'National' : ['BKN', 'PIT', 'MIL', 'CIN', 'PHI', 'CHI'],
@@ -824,6 +825,36 @@ def find_and_fix_long_streak(schedule,fixupdays):
                 prevstreak=streak
                 streak=0
     return False
+
+def provide_offday_in_final_week(schedule,fixupdays):
+    allteams = [ team for div in teams for team in teams[div]]
+    for thisteam in allteams:
+        hasdayoff = False
+        firstd = len(schedule)-6
+        lastd = len(schedule)-2
+        for d in range(firstd,lastd):
+            teams_playing_today = [ team for game in schedule[d] for team in game]
+            if thisteam not in teams_playing_today:
+                hasdayoff = True
+        if not hasdayoff:
+            print(thisteam+' needs day off in last week.')
+            print('Need to create an open date between '+format_date(firstd)+' and '+format_date(lastd-1))
+            for i in range(firstd,lastd):
+                dayofweek=get_day_of_week(i)
+                if dayofweek in ['Mon', 'Wed', 'Thu']:
+                    m = get_matchup_for_team(schedule,i,thisteam)
+                    mbefore = get_matchup_for_team(schedule,i-1,thisteam)
+                    mafter = get_matchup_for_team(schedule,i+1,thisteam)
+                    if m == None or (m == mbefore and m == mafter):
+                        continue
+                    print('Search for a swap date for '+str(m)+' on '+format_date(i))
+                    if find_open_day_to_move_game_to(schedule,i,m,fixupdays):
+                        return True
+                    if find_and_make_series_swap(schedule,i,m,fixupdays):
+                        return True
+                    print('Unable to create an open date between '+format_date(firstd)+' and '+format_date(lastd-1))
+                    return False
+    return True
 
 def ensure_CIN_starts_at_home(schedule,fixupdays):
     m = get_matchup_for_team(schedule,0,'CIN')
