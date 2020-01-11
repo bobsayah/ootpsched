@@ -6,7 +6,7 @@ import calendar
 import random
 import csv
 
-year=1961
+year=1962
 mlbdivisions = ['American', 'National', 'Western']
 teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
           'National' : ['BKN', 'PIT', 'MIL', 'CIN', 'PHI', 'CHI'],
@@ -25,7 +25,7 @@ homeawayswap = namedtuple('homeawayswap','matchup swaplist movelist')
 swapdate = namedtuple('swapdate', 'fromdate todate')
 
 def openingday(y=year):
-    startdate=date(y,4,7)
+    startdate=date(y,4,6)
     startdate=startdate+timedelta(4-startdate.weekday())
     return startdate
 
@@ -65,15 +65,26 @@ def initializeseriesdates():
 
     for w in range(0,24):
         if get_day_of_week(d) == 'Tue':
+            if (isaholiday(d+6)):
+                dates.append(seriesdates(d,3,'weekday',[]))
+                d=d+3
+                dates.append(seriesdates(d,4,'holiday',[]))
+                d=d+4
+            else:
+                dates.append(seriesdates(d,3,'weekday',[]))
+                d=d+3
+                dates.append(seriesdates(d,3,'weekend',[]))
+                d=d+3
+        elif isaholiday(d+14):
             dates.append(seriesdates(d,3,'weekday',[]))
             d=d+3
-            dates.append(seriesdates(d,3,'weekend',[]))
-            d=d+3
-        elif isaholiday(d+7):
-            dates.append(seriesdates(d,4,'weekday',[]))
-            d=d+4
+            dates.append(seriesdates(d,5,'weekend',[]))
+            d=d+5
+        elif isaholiday(d+2):  # Wed is a holiday
             dates.append(seriesdates(d,4,'holiday',[]))
             d=d+4
+            dates.append(seriesdates(d,3,'weekend',[]))
+            d=d+3
         else:
             dates.append(seriesdates(d,3,'weekday',[]))
             d=d+3
@@ -129,7 +140,7 @@ def poproundrobinseriesexact(allseries,division,numgames):
 
 def poproundrobinseriesmin(allseries,division,numgames):
     for s in allseries:
-        if s.seriestype == 'roundrobin' and s.homediv == division and s.numgames >= numgames:
+        if s.seriestype == 'roundrobin' and s.homediv == division and s.numgames >= numgames and s.numgames <= numgames+1:
             allseries.remove(s)
             return s
     raise
@@ -186,7 +197,10 @@ def assigndivdiv(dates,series):
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
-            d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
+            try:
+                d.serieslist.append(poproundrobinseriesexact(series,divlist[0],4))
+            except:
+                d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
         elif d.length == 3 and get_day_of_week(d.startdate) == 'Mon':
             blackout = search_for_blackout_div(dates,r)
             #print('Blackout division for '+str(d)+' is '+blackout)
@@ -200,15 +214,25 @@ def assigndivdiv(dates,series):
             divlist = mlbdivisions.copy()
             divlist.remove(divdivseries.homediv)
             divlist.remove(divdivseries.awaydiv)
-            if d.datetype == 'weekend':
-                if d.length == 3:
-                    d.serieslist.append(poproundrobinseriesexact(series,divlist[0],3))
-                else:
-                    d.serieslist.append(poproundrobinseriesmin(series,divlist[0],3))
-            else:
-                d.serieslist.append(poproundrobinseriesexact(series,divlist[0],2))
+            d.serieslist.append(poproundrobinseriesexact(series,divlist[0],2))
         if not len(series):
             break
+
+def assignfivedayseries(dates,series):
+    for r in range(0,len(dates)):
+        d = dates[r]
+        if d.serieslist != []:
+            continue
+        if d.length == 5:
+            try:
+                divdivseries = popdivdivseries(series,4)
+            except:
+                return None
+            d.serieslist.append(divdivseries)
+            divlist = mlbdivisions.copy()
+            divlist.remove(divdivseries.homediv)
+            divlist.remove(divdivseries.awaydiv)
+            d.serieslist.append(poproundrobinseriesexact(series,divlist[0],4))
 
 def assignfourgameroundrobin(dates,series):
     for d in reversed(dates):
@@ -971,23 +995,29 @@ def write_schedule(schedule):
     f.close()
 
 def create_schedule(allseriesdates,allseries):
+    assignfivedayseries(allseriesdates,allseries)
     assignholidayseries(allseriesdates,allseries)
     assigndivdiv(allseriesdates,allseries)
     assignfourgameroundrobin(allseriesdates,allseries)
-    assignthreegameweekendroundrobin(allseriesdates,allseries)
+    try:
+        assignthreegameweekendroundrobin(allseriesdates,allseries)
+    except:
+        print_series_dates(allseriesdates)
+        print(allseries)
     try:
         assignthreegameweekdayroundrobin(allseriesdates,allseries)
     except:
         print_series_dates(allseriesdates)
         print(allseries)
     if (len(allseries)):
-        print(str(len(series))+' series were not assigned.')
+        print_series_dates(allseriesdates)
+        print(allseries)
+        print(str(len(allseries))+' series were not assigned.')
         return False
 
     if check_series_length(allseriesdates):
         print_series_dates(allseriesdates)
         return False
-        
     numiters=1
     while rearrange_series(allseriesdates):
         numiters=numiters+1
