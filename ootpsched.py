@@ -6,7 +6,7 @@ import calendar
 import random
 import csv
 
-year=1963
+year=1964
 random.seed(year)
 mlbdivisions = ['American', 'National', 'Western']
 teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
@@ -14,7 +14,7 @@ teams = { 'American' : ['NYY', 'BAL', 'BOS', 'CLE', 'WAS', 'DET'],
           'Western' : ['STL', 'COL', 'DAL', 'LA', 'KC', 'SF'],
         }
 maxdayswithoutoffday = 22
-maxhomestand = 15
+maxhomestand = 14
 maxroadtrip = 14
 
 seriesdates = namedtuple('seriesdates', 'startdate, length, datetype, serieslist')
@@ -118,12 +118,12 @@ def initializematchups():
 
 def initializeseries():
     allseries = []
-    allseries = allseries + [ series('divdiv','National','American',3,n,0) for n in range(0,len(matchups['divdiv']))]
-    allseries = allseries + [ series('divdiv','American','Western',3,n,0) for n in range(0,len(matchups['divdiv']))]
-    allseries = allseries + [ series('divdiv','Western','National',3,n,0) for n in range(0,len(matchups['divdiv']))]
-    allseries = allseries + [ series('divdiv','National','American',4,n,1) for n in range(0,len(matchups['divdiv']))]
-    allseries = allseries + [ series('divdiv','American','Western',4,n,1) for n in range(0,len(matchups['divdiv']))]
-    allseries = allseries + [ series('divdiv','Western','National',4,n,1) for n in range(0,len(matchups['divdiv']))]
+    allseries = allseries + [ series('divdiv','National','American',4,n,0) for n in range(0,len(matchups['divdiv']))]
+    allseries = allseries + [ series('divdiv','American','Western',4,n,0) for n in range(0,len(matchups['divdiv']))]
+    allseries = allseries + [ series('divdiv','Western','National',4,n,0) for n in range(0,len(matchups['divdiv']))]
+    allseries = allseries + [ series('divdiv','National','American',3,n,1) for n in range(0,len(matchups['divdiv']))]
+    allseries = allseries + [ series('divdiv','American','Western',3,n,1) for n in range(0,len(matchups['divdiv']))]
+    allseries = allseries + [ series('divdiv','Western','National',3,n,1) for n in range(0,len(matchups['divdiv']))]
 
     allseries = allseries + [ series('roundrobin',div,div,4,n,0) for div in mlbdivisions for n in range(0,len(matchups['roundrobin']))]
     allseries = allseries + [ series('roundrobin',div,div,3,n,0) for div in mlbdivisions for n in range(0,len(matchups['roundrobin']))]
@@ -1071,7 +1071,7 @@ def create_schedule(allseriesdates,allseries):
     ensure_CIN_starts_at_home(schedule,offdayfixuplist)
     
     iters=0
-    while iters < 200:
+    while iters < 100:
         iters=iters+1
         try:
             fix_consecutive_offdays(schedule)
